@@ -1,9 +1,14 @@
 // ✅ app/page.tsx – 초록 테마 + 애니메이션 포함된 필터 UI + 지도 렌더링
 'use client'
 import { useEffect, useState } from 'react'
-import Map from './components/Map'
 import { motion } from 'framer-motion'
 
+import dynamic from 'next/dynamic'
+
+const Map = dynamic(() => import('./components/Map'), {
+  ssr: false,
+  loading: () => <p>🗺️ Loading map...</p>,
+})
 interface Sample {
   id: string
   biome: string
