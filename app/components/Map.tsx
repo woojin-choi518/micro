@@ -1,4 +1,3 @@
-// ✅ app/components/Map.tsx – 지도 컴포넌트 (맨해튼 중심으로 변경)
 'use client'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
