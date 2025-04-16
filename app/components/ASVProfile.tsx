@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Select from 'react-select'
+import { FaBacteria } from 'react-icons/fa6'
 
 interface Sample {
   id: string
@@ -38,14 +39,12 @@ export default function ASVProfile({
   const [locationName, setLocationName] = useState<string>('')
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null)
 
-  // 환경 특징 옵션 목록 생성
   const uniqueFeatures = Array.from(new Set(
     samples.map(sample => sample.env_feature).filter((f): f is string => !!f)
   )).sort()
 
   const featureOptions = uniqueFeatures.map(f => ({ value: f, label: f }))
 
-  // Reverse Geocoding → 지역명
   useEffect(() => {
     if (!selectedLocation) return
 
@@ -55,7 +54,9 @@ export default function ASVProfile({
           `https://nominatim.openstreetmap.org/reverse?lat=${selectedLocation.lat}&lon=${selectedLocation.lng}&format=json`
         )
         const data = await res.json()
-        const name = data.display_name.split(',').slice(0, 2).join(', ')
+        const name = data.address.road
+          ? `${data.address.road}, ${data.address.city || data.address.state}`
+          : data.display_name.split(',').slice(0, 2).join(', ')
         setLocationName(name)
       } catch {
         setLocationName(`${selectedLocation.lat.toFixed(4)}, ${selectedLocation.lng.toFixed(4)}`)
@@ -65,12 +66,11 @@ export default function ASVProfile({
     fetchLocationName()
   }, [selectedLocation])
 
-  // 주변 샘플 → ASV 계산
   useEffect(() => {
     if (!selectedLocation) return
     setLoading(true)
 
-    const R = 6371 // km
+    const R = 6371
     const d2r = Math.PI / 180
 
     const nearbySamples = samples.filter(sample => {
@@ -130,8 +130,8 @@ export default function ASVProfile({
 
   if (loading) {
     return (
-      <div className="p-6 bg-white rounded-lg shadow-lg border border-green-100">
-        <p className="text-gray-600">데이터를 불러오는 중...</p>
+      <div className="p-6 bg-white rounded-lg shadow-lg border border-green-100 animate-pulse">
+        <p className="text-gray-500">데이터를 불러오는 중...</p>
       </div>
     )
   }
@@ -148,19 +148,20 @@ export default function ASVProfile({
       transition={{ duration: 0.5 }}
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h3 className="text-xl font-semibold text-green-800">
-          {locationName} 주변 {radius}km 반경의 ASV 프로필
+        <h3 className="text-2xl font-bold text-green-800 flex items-center gap-2">
+          <FaBacteria className="text-green-600" />
+          {locationName} 주변 {radius}km 내 ASV 분포
         </h3>
-
-        {/* 🔽 환경 특징 필터 드롭다운 */}
         <div className="w-full md:w-64 text-sm">
           <Select
             isClearable
-            placeholder="특징으로 필터링"
+            placeholder="환경 특징으로 필터링"
             options={featureOptions}
             value={selectedFeature ? { value: selectedFeature, label: selectedFeature } : null}
             onChange={(option) => setSelectedFeature(option?.value ?? null)}
-            className="text-sm"
+            styles={{
+              placeholder: (base) => ({ ...base, color: '#1e3a1e', fontWeight: '500' })
+            }}
           />
         </div>
       </div>
@@ -177,17 +178,17 @@ export default function ASVProfile({
                 <span className="text-sm font-semibold text-green-800">
                   출현 빈도: {count}회
                 </span>
-                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                <span className="text-xs border border-green-300 text-green-700 bg-white px-2 py-1 rounded-full">
                   {((count / totalSamples) * 100).toFixed(1)}%
                 </span>
               </div>
-              <div className="font-mono text-sm text-gray-700 break-all">
+              <div className="font-mono text-sm bg-white p-2 rounded-md text-gray-700 break-words">
                 {sequence}
               </div>
               {!selectedFeature && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {Object.entries(features).map(([feature, featureCount]) => (
-                    <span key={feature} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    <span key={feature} className="text-xs bg-green-200 text-green-900 px-2 py-1 rounded-full">
                       {feature}: {featureCount}회
                     </span>
                   ))}
@@ -196,7 +197,7 @@ export default function ASVProfile({
             </div>
           ))
         ) : (
-          <p className="text-gray-600">
+          <p className="text-gray-500">
             선택된 위치 주변에서 발견된 ASV가 없습니다.
             {selectedFeature && ` (${selectedFeature} 특징에서)`}
           </p>
