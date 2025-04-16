@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import ASVProfile from './ASVProfile'
 import { Sample } from '@/app/lib/types'
 import MarkerClusterGroup from 'react-leaflet-cluster'
@@ -57,7 +57,7 @@ export default function Map({ samples }: { samples: Sample[] }) {
       <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] relative rounded-lg overflow-hidden shadow-lg border border-green-100">
         <MapContainer
           center={[40.7831, -73.9712]} // 맨해튼 중심
-          zoom={7}
+          zoom={zoom}
           minZoom={3}
           maxZoom={16}
           scrollWheelZoom={true}
