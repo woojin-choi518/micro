@@ -5,16 +5,17 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Sample } from '@/app/lib/types'
 
-
 const Map = dynamic(() => import('../components/Map'), {
   ssr: false,
-  loading: () => <p>🗺️ Loading map...</p>,
+  loading: () => <p>Loading map...</p>,
 })
 
 export default function MapPage() {
   const [samples, setSamples] = useState<Sample[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [showBiomes, setShowBiomes] = useState(false)
+  const [showRegions, setShowRegions] = useState(false)
 
   useEffect(() => {
     fetch('/api/samples')
@@ -29,8 +30,14 @@ export default function MapPage() {
       })
   }, [])
 
+  const uniqueBiomes = Array.from(new Set(samples.map((s) => s.env_biome)))
+  const uniqueRegions = Array.from(
+    new Set(samples.map((s) => s.env_feature).filter(Boolean))
+  )
+
   const filteredSamples = samples.filter((s) =>
-    s.env_biome.toLowerCase().includes(query.toLowerCase())
+    s.env_biome.toLowerCase().includes(query.toLowerCase()) ||
+    (s.env_feature || '').toLowerCase().includes(query.toLowerCase())
   )
 
   if (loading) {
@@ -48,44 +55,81 @@ export default function MapPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="mb-8 p-4 rounded-2xl bg-green-100 shadow-md text-center"
+        className="mb-8 p-6 rounded-2xl bg-green-100 shadow-md text-center"
       >
-        <h1 className="text-3xl font-extrabold text-green-700 mb-2">
+        <h1 className="text-4xl font-extrabold text-green-700 mb-2">
           Microbiome Map
         </h1>
-        <p className="text-green-600 text-lg font-semibold">
+        <p className="text-green-700 text-lg font-medium">
           Explore your local microbiome data!
         </p>
       </motion.div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      {/* Statistics with toggleable lists */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <div className="p-4 bg-white rounded-xl shadow text-center">
           <p className="text-sm text-gray-500">Total Samples</p>
-          <p className="text-2xl font-bold text-green-700">{samples.length}</p>
+          <p className="text-3xl font-bold text-green-700">{samples.length}</p>
         </div>
-        <div className="p-4 bg-white rounded-xl shadow text-center">
+        <div
+          className="p-4 bg-white rounded-xl shadow text-center cursor-pointer hover:bg-green-50"
+          onClick={() => setShowBiomes(!showBiomes)}
+        >
           <p className="text-sm text-gray-500">Unique Biomes</p>
-          <p className="text-2xl font-bold text-green-700">
-            {new Set(samples.map((s) => s.env_biome)).size}
-          </p>
+          <p className="text-3xl font-bold text-green-700">{uniqueBiomes.length}</p>
         </div>
-        <div className="p-4 bg-white rounded-xl shadow text-center">
+        <div
+          className="p-4 bg-white rounded-xl shadow text-center cursor-pointer hover:bg-green-50"
+          onClick={() => setShowRegions(!showRegions)}
+        >
           <p className="text-sm text-gray-500">Regions</p>
-          <p className="text-2xl font-bold text-green-700">
-            {new Set(samples.map((s) => s.env_feature)).size}
-          </p>
+          <p className="text-3xl font-bold text-green-700">{uniqueRegions.length}</p>
         </div>
       </div>
+
+      {/* Lists */}
+      {showBiomes && (
+        <div className="mb-6 p-4 bg-white border border-green-100 rounded-lg shadow">
+          <h3 className="font-bold text-green-700 mb-2">Biomes</h3>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {uniqueBiomes.map((b) => (
+              <span
+                key={b}
+                className="bg-green-100 text-green-700 px-3 py-1 rounded-full"
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {showRegions && (
+        <div className="mb-6 p-4 bg-white border border-green-100 rounded-lg shadow">
+          <h3 className="font-bold text-green-700 mb-2">Regions</h3>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {uniqueRegions.map((r) => (
+              <span
+                key={r as string}
+                className="bg-green-100 text-green-700 px-3 py-1 rounded-full"
+              >
+                {r as string}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search Bar */}
       <input
         type="text"
         placeholder="Search by Region or Biome..."
-        className="mb-6 p-3 w-full rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+        className="mb-6 p-3 w-full rounded-xl border border-green-300 shadow-sm 
+                  text-green-800 placeholder:text-green-400 
+                  focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+
 
       {/* Map */}
       <motion.div
@@ -96,7 +140,6 @@ export default function MapPage() {
         <Map samples={filteredSamples} />
       </motion.div>
 
-      {/* Footer */}
       <footer className="mt-12 text-center text-xs text-gray-400">
         Data Source: Earth Microbiome Project
       </footer>

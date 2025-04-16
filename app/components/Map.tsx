@@ -6,17 +6,24 @@ import L from 'leaflet'
 import { useMemo, useState } from 'react'
 import ASVProfile from './ASVProfile'
 import { Sample } from '@/app/lib/types'
+import MarkerClusterGroup from 'react-leaflet-cluster'
+import SampleDetailPanel from './SampleDetailPanel'
 
-// 동적 마커 아이콘 생성 함수
-function DynamicMarkerIcon(zoomLevel: number) {
-  return L.icon({
-    iconUrl: '/images/micro_icon.png',
-    iconSize: [zoomLevel * 3, zoomLevel * 3],
-    iconAnchor: [zoomLevel * 1.5, zoomLevel * 3],
-  })
-}
+// 고정 마커 아이콘 (기본)
+const defaultIcon = L.icon({
+  iconUrl: '/images/virus.png',
+  iconSize: [24, 24],
+  iconAnchor: [12, 24],
+})
 
-// 지도 클릭 시 위치 선택 처리
+// 선택된 마커 아이콘 (위치 클릭 시)
+const selectedIcon = L.icon({
+  iconUrl: '/images/Location-marker.png',
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+})
+
+// 위치 선택 처리
 function LocationMarker({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -45,15 +52,15 @@ export default function Map({ samples }: { samples: Sample[] }) {
     setSelectedLocation({ lat, lng })
   }
 
-  const markerIcon = useMemo(() => DynamicMarkerIcon(zoom), [zoom])
-
   return (
     <div className="space-y-4">
       <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] relative rounded-lg overflow-hidden shadow-lg border border-green-100">
         <MapContainer
-          center={[40.7, -73.9]} // New York
-          zoom={zoom}
-          scrollWheelZoom={false}
+          center={[40.7831, -73.9712]} // 맨해튼 중심
+          zoom={7}
+          minZoom={3}
+          maxZoom={16}
+          scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
@@ -64,40 +71,39 @@ export default function Map({ samples }: { samples: Sample[] }) {
           <ZoomHandler onZoomChange={setZoom} />
           <LocationMarker onLocationSelect={handleLocationSelect} />
 
-          {samples.map(sample => {
-            if (!sample.latitude || !sample.longitude) return null
+          {/* 선택 위치 마커 */}
+          {selectedLocation && (
+            <Marker
+              position={[selectedLocation.lat, selectedLocation.lng]}
+              icon={selectedIcon}
+            >
+              <Popup>
+                Selected Location
+              </Popup>
+            </Marker>
+          )}
 
-            return (
-              <Marker
-                key={sample.id}
-                position={[sample.latitude, sample.longitude]}
-                icon={markerIcon}
-              >
-                <Popup>
-                  <div className="p-2 space-y-2 text-sm max-w-[250px] break-words">
-                    <div>
-                      <span className="font-semibold">Sample ID:</span><br />
-                      <span className="break-all">{sample.sample_id}</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold">Physical Specimen:</span>{' '}
-                      <span className={sample.physical_specimen_remaining ? 'text-green-600' : 'text-red-600'}>
-                        {sample.physical_specimen_remaining ? 'Available' : 'Not Available'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-semibold">Environment:</span>{' '}
-                      {sample.env_biome}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Feature:</span>{' '}
-                      {sample.env_feature || 'Not specified'}
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            )
-          })}
+          <MarkerClusterGroup 
+            chunkedLoading
+            removeOutsideVisibleBounds
+            showCoverageOnHover={false}
+          >
+            {samples.map(sample => {
+              if (!sample.latitude || !sample.longitude) return null
+
+              return (
+                <Marker
+                  key={sample.id}
+                  position={[sample.latitude, sample.longitude]}
+                  icon={defaultIcon}
+                >
+                  <Popup>
+                    <SampleDetailPanel sample={sample} />
+                  </Popup>
+                </Marker>
+              )
+            })}
+          </MarkerClusterGroup>
         </MapContainer>
       </div>
 
