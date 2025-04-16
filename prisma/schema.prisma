@@ -8,14 +8,21 @@ datasource db {
 }
 
 model Sample {
-  id          String   @id
-  biome       String
-  feature     String?
-  type        String?
-  latitude    Float?
-  longitude   Float?
-  description String?
-  createdAt   DateTime @default(now())
+  id                           String   @id @default(cuid())
+  sample_id                    String
+  physical_specimen_remaining  Boolean
+  qiita_study_id              Int
+  env_biome                   String
+  env_feature                 String?
+  sample_type                 String?
+  longitude                   Float?
+  latitude                    Float?
+  description                 String?
+  sample_id_full              String?
+  top5_asv                    String[]
+  createdAt                   DateTime @default(now())
+
+  @@unique([sample_id])
 }
 
 
