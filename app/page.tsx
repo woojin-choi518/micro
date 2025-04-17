@@ -23,12 +23,12 @@ const features = [
   {
     title: '간편한 샘플 검색',
     desc: 'EMP의 미생물 샘플을 환경, 위치, 유형 등 다양한 조건으로 빠르게 검색할 수 있습니다.',
-    image: '/images/sample1.jpg',
+    image: '/images/search.png',
   },
   {
     title: '지역별로 미생물 분포 시각화',
     desc: '지도 기반으로 지역별 미생물의의 분포를 한 눈에 파악할 수 있습니다.',
-    image: '/images/sample1.jpg',
+    image: '/images/area.png',
   },
   {
     title: '사용자 데이터셋 업로드 시각화',

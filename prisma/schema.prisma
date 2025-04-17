@@ -25,4 +25,16 @@ model Sample {
   @@unique([sample_id])
 }
 
+model Taxonomy {
+  id         String   @id @default(uuid())
+  asvSeq     String   @unique @db.Text
+  domain     String?
+  phylum     String?
+  class      String?
+  order      String?
+  family     String?
+  genus      String?
+  species    String?
+  confidence Float?
+}
 
