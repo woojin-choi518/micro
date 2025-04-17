@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Sample } from '@/app/lib/types'
+import SearchInput from '../components/SearchInput'
 
 const Map = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -120,16 +121,7 @@ export default function MapPage() {
       )}
 
       {/* Search Bar */}
-      <input
-        type="text"
-        placeholder="Search by Region or Biome..."
-        className="mb-6 p-3 w-full rounded-xl border border-green-300 shadow-sm 
-                  text-green-800 placeholder:text-green-400 
-                  focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-
+      <SearchInput value={query} onChange={setQuery} />
 
       {/* Map */}
       <motion.div
