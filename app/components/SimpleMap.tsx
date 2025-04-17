@@ -7,11 +7,10 @@ import { Sample } from '@/app/lib/types'
 
 // Leaflet 마커 아이콘 설정
 const markerIcon = L.icon({
-  iconUrl: '/images/micro_icon.png',
-  iconSize: [25, 41],
+  iconUrl: '/images/virus.png',
+  iconSize: [25, 25],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
 })
 
 export default function SimpleMap({ samples }: { samples: Sample[] }) {
@@ -21,8 +20,8 @@ export default function SimpleMap({ samples }: { samples: Sample[] }) {
         center={[36.5, 127.5]}
         zoom={2}
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
-        dragging={false}
+        scrollWheelZoom={true}
+        dragging={true}
         doubleClickZoom={false}
         zoomControl={false}
       >
