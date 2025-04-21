@@ -20,7 +20,7 @@ export default function SimpleMap({ samples }: { samples: Sample[] }) {
         center={[36.5, 127.5]}
         zoom={2}
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={true}
+        scrollWheelZoom={false}
         dragging={true}
         doubleClickZoom={false}
         zoomControl={false}
