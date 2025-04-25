@@ -100,7 +100,11 @@ export default function ASVProfileCharts({ data }: ASVChartProps) {
   }, [top10])
 
   const treemapData = useMemo(() =>
-    top10.map(asv => ({ name: asv.name, size: asv.count })), [top10])
+    top10.map((asv, i) => ({
+      name: asv.name,
+      size: asv.count,
+      fill: TREEMAP_COLORS[i % TREEMAP_COLORS.length]
+    })), [top10])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
@@ -170,12 +174,6 @@ export default function ASVProfileCharts({ data }: ASVChartProps) {
             stroke="#fff"
             animationDuration={500}
           >
-            {treemapData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`}
-                fill={TREEMAP_COLORS[index % TREEMAP_COLORS.length]}
-              />
-            ))}
           </Treemap>
         </ResponsiveContainer>
         <CustomTreemapTooltip />
