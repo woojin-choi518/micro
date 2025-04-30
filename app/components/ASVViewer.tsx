@@ -62,25 +62,26 @@ export default function ASVViewer({
         <div className="flex gap-2">
           <button
             onClick={() => setView('list')}
-            className={`px-4 py-1 rounded-md text-sm font-semibold border transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition ${
               view === 'list'
-                ? 'bg-green-600 text-white border-green-600'
-                : 'bg-white text-green-700 border-green-400 hover:bg-green-100'
+                ? 'bg-green-500 text-white'
+                : 'bg-white text-green-700 border border-green-300 hover:bg-green-50'
             }`}
           >
             리스트 보기
           </button>
           <button
             onClick={() => setView('chart')}
-            className={`px-4 py-1 rounded-md text-sm font-semibold border transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition ${
               view === 'chart'
-                ? 'bg-green-600 text-white border-green-600'
-                : 'bg-white text-green-700 border-green-400 hover:bg-green-100'
+                ? 'bg-green-500 text-white'
+                : 'bg-white text-green-700 border border-green-300 hover:bg-green-50'
             }`}
           >
             그래프 보기
           </button>
         </div>
+
       </div>
 
       {view === 'list' ? (
