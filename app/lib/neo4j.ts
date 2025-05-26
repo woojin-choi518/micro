@@ -1,8 +1,19 @@
-import neo4j from 'neo4j-driver'
+import neo4j, { Driver } from 'neo4j-driver';
 
-const driver = neo4j.driver(
-  process.env.NEO4J_URI!,
-  neo4j.auth.basic(process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!)
-)
+declare global {
+  // eslint-disable-next-line no-var
+  var __neo4jDriver: Driver | undefined;
+}
+/* eslint-enable no-var */
 
-export { driver }
+const uri      = process.env.NEO4J_URI!;
+const user     = process.env.NEO4J_USER!;
+const password = process.env.NEO4J_PASSWORD!;
+console.log('🔍 NEO4J_URI loaded by Next:', process.env.NEO4J_URI);
+export const driver: Driver =
+  globalThis.__neo4jDriver ??
+  (globalThis.__neo4jDriver = neo4j.driver(
+    uri,
+    neo4j.auth.basic(user, password),
+    { encrypted: 'ENCRYPTION_OFF' }
+  ));
