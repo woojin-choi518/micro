@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgre:microbiomePG@210.119.32.188:5432/mydb"
+  url      = "postgresql://postgre:microbiomePG@210.119.32.188:20055/mydb"
 }
 
 model Sample {
