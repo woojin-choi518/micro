@@ -4,30 +4,28 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://[READACTED]"
 }
 
 model Sample {
-  id                           String   @id @default(cuid())
-  sample_id                    String
-  physical_specimen_remaining  Boolean
-  qiita_study_id              Int
+  id                          String   @id @default(cuid())
+  latitude                    Float?
+  longitude                   Float?
+  description                 String?
+  createdAt                   DateTime @default(now())
   env_biome                   String
   env_feature                 String?
-  sample_type                 String?
-  longitude                   Float?
-  latitude                    Float?
-  description                 String?
+  physical_specimen_remaining Boolean
+  qiita_study_id              Int
+  sample_id                   String   @unique
   sample_id_full              String?
+  sample_type                 String?
   top5_asv                    String[]
-  createdAt                   DateTime @default(now())
-
-  @@unique([sample_id])
 }
 
 model Taxonomy {
-  id         String   @id @default(uuid())
-  asvSeq     String   @unique @db.Text
+  id         String  @id @default(uuid())
+  asvSeq     String  @unique
   domain     String?
   phylum     String?
   class      String?
@@ -37,4 +35,3 @@ model Taxonomy {
   species    String?
   confidence Float?
 }
-
