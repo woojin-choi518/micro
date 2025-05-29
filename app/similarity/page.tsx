@@ -32,7 +32,7 @@ export default function SimilarityPage() {
 
   // 1) 샘플 메타데이터 로드
   useEffect(() => {
-    fetch('/api/samples')
+    fetch('/samples.json')
       .then(r => r.json())
       .then(setSamples)
       .catch(console.error)
