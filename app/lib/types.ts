@@ -35,3 +35,16 @@ export interface TaxonomyInfo {
   species?: string
   confidence?: number
 }
+
+export interface Microbe {
+  id: string;
+  ncbi_id: string;
+  organism: string;
+  latitude: number | null;
+  longitude: number | null;
+  original_date: string | null;
+  collection_date: string | null;
+  year: number | null;
+  sequence: string;
+  createdAt?: string | null; 
+}
