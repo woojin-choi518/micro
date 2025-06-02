@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build": "prisma generate && npm run export-data && next build",
+    "vercel-build": "prisma generate && npm run export-data && next build",
     "export-data": "node scripts/export-samples.js",
-    "build": "npm run export-data && prisma generate && next build",
     "dev": "npm run export-data && next dev",
     "start": "next start",
     "lint": "next lint",
