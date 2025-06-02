@@ -35,3 +35,16 @@ model Taxonomy {
   species    String?
   confidence Float?
 }
+
+model PolarMicrobe {
+  id              String    @id @default(dbgenerated("gen_random_uuid()"))
+  ncbi_id         String?
+  organism        String?
+  latitude        Float?
+  longitude       Float?
+  original_date   String?
+  collection_date DateTime? @db.Timestamp(6)
+  year            Int?
+  sequence        String?
+  createdAt       DateTime? @default(now()) @db.Timestamp(6)
+}
