@@ -371,7 +371,10 @@ export default function CesiumGlobe() {
       'pollution-offshore',
       'pollution-nearshore',
       'pollution-nunavut',
-      'pollution-northwest'
+      'pollution-northwest',
+      'pollution-livingston',
+      'pollution-arthurharbor',
+      'pollution-larsemann'
     ];
     existingIds.forEach((id) => {
       if (viewer.entities.getById(id)) {
@@ -543,9 +546,154 @@ export default function CesiumGlobe() {
             <li><em>Polaribacter</em>: 얼음 속에서 주로 발견되어 기름 분해</li>
           </ul>
         </div>
+        
       `),
     });
+        // --- (6) Livingston Island, Byers Peninsula (남극 해양 퇴적물) ---
+    //     위도: 62°40′09.9″ S  → -62.6694,   경도: 61°09′04″ W  → -61.1511
+    viewer.entities.add({
+      id: 'pollution-livingston',
+      position: Cartesian3.fromDegrees(-61.1511, -62.6694),
+      billboard: {
+        image: 'images/warning-icon.svg',
+        width: 32,
+        height: 32,
+        verticalOrigin: VerticalOrigin.CENTER
+      },
+      name: 'Livingston Island Marine Sediment Study',
+      description: new ConstantProperty(`
+        <div style="
+          background-color: rgba(32, 34, 37, 0.95);
+          padding: 12px;
+          color: #ffffff;
+          font-size: 14px;
+          line-height: 1.4;
+          max-width: 300px;
+        ">
+          <h3 style="margin-top:0; color:#ffcc00;">리빙스턴 섬, 바이러스 반도 (Byers Peninsula, Livingston Island)</h3>
+          <p><strong>위치:</strong> 62°40′09.9″ S, –61°09′04″ W</p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 배경</h4>
+          <p style="margin:0 0 8px 0;">
+            남극 리빙스턴 섬의 바이러스 반도는 생태학적으로 보호받는 구역으로, 
+            연구진은 여기 해양 퇴적물에 모의 급성 유류 유출 실험을 적용하여 
+            기름이 박테리아 군집에 미치는 영향을 조사했습니다.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 방법</h4>
+          <p style="margin:0 0 8px 0;">
+            현장에서 해양 퇴적물을 채취한 뒤 실험실에서 원유를 주입하고 30일간 변화를 관찰. 
+            DNA 추출 및 메타게놈 시퀀싱을 통해 박테리아 군집 구조 분석.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 결과</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li>유류 오염은 박테리아 군집에 구조적 변화를 유발</li>
+            <li>자연 상태에서는 Proteobacteria와 Bacteroidetes가 우점하였으나,</li>
+            <li>유류 노출 이후 일부 Alcanivorax 등의 기름 분해 세균 상대적 풍부도 증가</li>
+            <li>군집 다양성 감소 및 특정 오일 분해 미생물 선택적 활성화 확인</li>
+          </ul>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">주요 미생물 그룹</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li><em>Alcanivorax</em>: 기름 분해에 특화된 해양 박테리아</li>
+            <li><em>Pseudoalteromonas</em>, <em>Shewanella</em>: 일부 분해 활성 보였으나 변화 미약</li>
+          </ul>
+        </div>
+      `)
+    });
 
+    // --- (7) Arthur Harbor, near Palmer Station (1989년 디젤 유출 사고) ---
+    //     위도: 64°46′ S  → -64.7667,   경도: 64°03′ W  → -64.0500
+    viewer.entities.add({
+      id: 'pollution-arthurharbor',
+      position: Cartesian3.fromDegrees(-64.0500, -64.7667),
+      billboard: {
+        image: 'images/warning-icon.svg',
+        width: 32,
+        height: 32,
+        verticalOrigin: VerticalOrigin.CENTER
+      },
+      name: 'Arthur Harbor Diesel Spill Study',
+      description: new ConstantProperty(`
+        <div style="
+          background-color: rgba(32, 34, 37, 0.95);
+          padding: 12px;
+          color: #ffffff;
+          font-size: 14px;
+          line-height: 1.4;
+          max-width: 300px;
+        ">
+          <h3 style="margin-top:0; color:#ffcc00;">아서 하버 (Arthur Harbor), 팔머 스테이션 인근</h3>
+          <p><strong>위치:</strong> 64°46′ S, –64°03′ W</p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 배경</h4>
+          <p style="margin:0 0 8px 0;">
+            1989년 아서 하버 해역에서 발생한 디젤 유출 사고(Bahia Paraiso 유조선 침몰) 이후, 
+            수개월~수년간 미생물 군집 변화 분석 연구가 진행되었습니다.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 방법</h4>
+          <p style="margin:0 0 8px 0;">
+            디젤 오염 지역과 비오염 지역의 해수 및 퇴적물을 비교 분석. 
+            1989~1991년까지 반복 채취하여 군집 분석과 분해 속도 비교를 실시.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 결과</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li>오염 직후 분해 활성이 일시적으로 증가했으나, 군집 다양성 감소 및 정상 상태 회복 지연 관찰</li>
+            <li>일부 hydrocarbon‐degrading bacteria 비율 증가</li>
+            <li>사고 2년 후에도 비오염 지역에 비해 군집 구조 차이 존재</li>
+          </ul>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">주요 미생물 그룹</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li><em>Flavobacterium</em>, <em>Rhodococcus</em>, <em>Pseudomonas</em> 등 탄화수소 분해 능력 보유</li>
+            <li>구체적인 종 수준 데이터는 제한적, 디젤 분해 관련 속 중심 변화 관찰</li>
+          </ul>
+        </div>
+      `)
+    });
+
+    // --- (8) Larsemann Hills, East Antarctica (영구동토 토양) ---
+    //     위도: 69°23′ S  → -69.3833,   경도: 76°22′ E  → 76.3667
+    viewer.entities.add({
+      id: 'pollution-larsemann',
+      position: Cartesian3.fromDegrees(76.3667, -69.3833),
+      billboard: {
+        image: 'images/warning-icon.svg',
+        width: 32,
+        height: 32,
+        verticalOrigin: VerticalOrigin.CENTER
+      },
+      name: 'Larsemann Hills Permafrost Soil Study',
+      description: new ConstantProperty(`
+        <div style="
+          background-color: rgba(32, 34, 37, 0.95);
+          padding: 12px;
+          color: #ffffff;
+          font-size: 14px;
+          line-height: 1.4;
+          max-width: 300px;
+        ">
+          <h3 style="margin-top:0; color:#ffcc00;">라르스만 힐스 (Larsemann Hills), 동남극</h3>
+          <p><strong>위치:</strong> 69°23′ S, 76°22′ E</p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 배경</h4>
+          <p style="margin:0 0 8px 0;">
+            동남극 라르스만 힐스 지역의 영구동토층(permafrost soil)에서 
+            미생물 군집 구조를 분석하고, 오염 및 환경요인과의 관계를 평가한 연구입니다.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 방법</h4>
+          <p style="margin:0 0 8px 0;">
+            현장에서 토양을 채취하여 DNA 시퀀싱 및 메타게놈 분석을 실시. 
+            pH, 염분, 유기물 등 환경 요소와 군집 구성 간 상관관계 분석.
+          </p>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">연구 결과</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li>주요 미생물군: Proteobacteria, Actinobacteria, Bacteroidetes</li>
+            <li>인간 활동에 의한 외래종 유입 가능성 탐지</li>
+            <li>토양 특성과 미생물 다양성 간 뚜렷한 상관관계 확인</li>
+          </ul>
+          <h4 style="margin-bottom:4px; color:#ffcc00;">주요 미생물 그룹</h4>
+          <ul style="margin:0; padding-left:1em;">
+            <li><em>Actinobacteria</em>: 낮은 온도에서도 유기물 분해 능력</li>
+            <li><em>Arthrobacter</em>, <em>Sphingomonas</em>: 극지 환경에서 활동 가능한 생물학적 복원 능력 보유</li>
+          </ul>
+        </div>
+      `)
+    });
     // (끝) 이 훅이 다시 실행되지 않도록, 의존성 배열에 isViewerInitialized만 추가
   }, [isViewerInitialized]);
 
