@@ -40,7 +40,8 @@
     "stream-json": "^1.9.1",
     "swiper": "^11.2.6",
     "tsparticles": "^3.8.1",
-    "tsparticles-engine": "^2.12.0"
+    "tsparticles-engine": "^2.12.0",
+    "cesium": "^1.114.0"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.17",

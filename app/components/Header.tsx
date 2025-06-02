@@ -14,6 +14,9 @@ export default function Header() {
         <Link href="/similarity" className="hover:underline">
           Similarity
         </Link>
+        <Link href="/cesium" className="hover:underline">
+          Cesium
+        </Link>
       </nav>
     </header>
   )
