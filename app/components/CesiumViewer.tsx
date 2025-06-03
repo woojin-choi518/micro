@@ -61,7 +61,7 @@ export default function CesiumGlobe() {
   ).sort();
 
   // 패널 열림/닫힘 상태 토글 변수
-  const [isYearPanelOpen, setIsYearPanelOpen] = useState<boolean>(true);
+  const [isYearPanelOpen, setIsYearPanelOpen] = useState<boolean>(false);
   const [isPieChartOpen,     setIsPieChartOpen]     = useState<boolean>(true);
 
 
@@ -1003,7 +1003,7 @@ export default function CesiumGlobe() {
               4) PieChart 패널 헤더(토글) + 본문
               ───────────────────────────────────────────────────────────────── */}
           {selectedGroup && (
-        <div className="fixed bottom-6 left-6 z-30">
+        <div className="fixed bottom-6 right-2 z-30">
           {/* 헤더 전체를 둥글게 */}
           <div
             className="
