@@ -60,6 +60,11 @@ export default function CesiumGlobe() {
     new Set(microbes.map((m) => m.organism).filter((o) => o != null))
   ).sort();
 
+  // 패널 열림/닫힘 상태 토글 변수
+  const [isYearPanelOpen, setIsYearPanelOpen] = useState<boolean>(true);
+  const [isPieChartOpen,     setIsPieChartOpen]     = useState<boolean>(true);
+
+
   /** ================================================================
    *  2. uniqueYears → yearColorMap 생성
    *     microbes가 바뀔 때마다 uniqueYears를 업데이트하고, 색상 매핑도 갱신
@@ -75,6 +80,7 @@ export default function CesiumGlobe() {
     if (years.length > 0 && currentYear === null) {
       setCurrentYear(years[0]);
       setSelectedYears([years[0]]);
+      setSelectedYears(years);
     }
   }, [microbes]);
 
@@ -199,10 +205,10 @@ export default function CesiumGlobe() {
         // STEP4: 카메라 북극 뷰로 셋업
         if (scene.camera) {
           scene.camera.setView({
-            destination: Cartesian3.fromDegrees(0.0, 80.0, 9000000),
+            destination: Cartesian3.fromDegrees(-156.9, 71.3647, 200000),
             orientation: {
               heading: CesiumMath.toRadians(0.0),
-              pitch: CesiumMath.toRadians(-90.0),
+              pitch: CesiumMath.toRadians(-80.0),
               roll: 0.0,
             },
           });
@@ -341,6 +347,7 @@ export default function CesiumGlobe() {
           verticalOrigin: VerticalOrigin.TOP,
           pixelOffset: new Cartesian3(0, -15),
         },
+        name: 'microbes',
         description: new CallbackProperty(() => {
           setSelectedGroup(group);
           return new ConstantProperty(
@@ -789,154 +796,272 @@ export default function CesiumGlobe() {
    * 12. UI 렌더링
    *  ================================================================ */
   // 슬라이더의 최소/최대값
-  const minYear = uniqueYears.length > 0 ? uniqueYears[0] : 0;
-  const maxYear = uniqueYears.length > 0 ? uniqueYears[uniqueYears.length - 1] : 0;
-
-  return (
-    <>
-      {/* — 에러 표시 — */}
-      {error && (
-        <div className="absolute top-4 left-4 z-10 bg-red-500 text-white p-2 rounded shadow">
-          {error}
-        </div>
-      )}
-
-      {/* — 왼쪽 패널: 애니메이션 슬라이더 + 필터 UI — */}
-      <div className="fixed top-20 left-4 z-40 w-60 max-h-[90vh] overflow-y-auto bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg p-4 space-y-6">
-        {/* ▷ 1) Year Animation (슬라이더 + Play/Pause) */}
-        <div>
-          <h2 className="text-sm font-semibold text-white mb-2">🌡️ Year Animation</h2>
-          <div className="flex items-center space-x-2">
-            <span className="text-white text-xs">{minYear}</span>
-            <input
-              type="range"
-              min={minYear}
-              max={maxYear}
-              value={currentYear ?? minYear}
-              onChange={(e) => {
-                const y = Number(e.target.value);
-                setCurrentYear(y);
-                // isPlaying === true라면 useEffect에서 selectedYears 덮어쓰기
-              }}
-              className="w-full"
-            />
-            <span className="text-white text-xs">{maxYear}</span>
-          </div>
-          <button
-            onClick={onClickPlayPause}
-            className={`mt-2 px-3 py-1 text-sm font-medium rounded 
-              ${isPlaying ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}
-          >
-            {isPlaying ? 'Pause ⏸️' : 'Play ▶️'}
-          </button>
-        </div>
-
-        {/* ▷ 2) Organism 드롭다운 + 검색 */}
-        <div>
-          <label className="block text-white text-xs mb-1">🦠 Organism 선택</label>
-          <select
-            value={organismFilter}
-            onChange={(e) => setOrganismFilter(e.target.value)}
-            className="w-full p-1 text-gray-800 rounded-md text-sm"
-          >
-            <option value="">── 전체 ──</option>
-            {uniqueOrganisms.map((org) => (
-              <option key={org} value={org}>
-                {org}
-              </option>
-            ))}
-          </select>
-          <label className="block text-white text-xs mt-3 mb-1">🔎 Organism 검색</label>
-          <input
-            type="text"
-            placeholder="Enter organism name..."
-            value={organismFilter}
-            onChange={(e) => setOrganismFilter(e.target.value)}
-            className="w-full p-1 text-gray-800 rounded-md text-sm"
-          />
-        </div>
-
-        {/* ▷ 3) Sequence 검색 */}
-        <div>
-          <label className="block text-white text-xs mb-1">🔎 Sequence 검색</label>
-          <input
-            type="text"
-            placeholder="Enter sequence substring..."
-            value={sequenceFilter}
-            onChange={(e) => setSequenceFilter(e.target.value)}
-            className="w-full p-1 text-gray-800 rounded-md text-sm"
-          />
-        </div>
-
-        {/* ▷ 4) Filter by Year (체크박스 멀티셀렉트) */}
-        <div>
-          <h2 className="text-sm font-semibold mb-2 text-white">📅 Filter by Year</h2>
-          <div className="mb-2">
-            <label className="flex items-center space-x-2 text-white text-sm hover:bg-white/10 rounded-md px-2 py-1">
-              <input
-                type="checkbox"
-                checked={selectedYears.length === uniqueYears.length}
-                onChange={toggleSelectAll}
-                className="accent-lime-400 focus:ring-2 focus:ring-lime-300"
-              />
-              <span>전체 선택</span>
-            </label>
-          </div>
-          <div className="space-y-1 max-h-52 overflow-y-auto px-1">
-            {uniqueYears.map((year) => {
-              const cesiumColor = yearColorMap[year] || Color.GRAY;
-              const cssHex = cesiumColor.toCssHexString();
-              return (
-                <label
-                  key={year}
-                  className="flex items-center space-x-2 text-sm text-white hover:bg-white/10 rounded-md px-2 py-1"
-                >
-                  <input
-                    type="checkbox"
-                    value={year}
-                    checked={selectedYears.includes(year)}
-                    onChange={() => toggleYear(year)}
-                    className="accent-lime-400 focus:ring-2 focus:ring-lime-300"
-                  />
-                  <span
-                    style={{
-                      backgroundColor: cssHex,
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '2px',
-                      display: 'inline-block',
-                    }}
-                  />
-                  <span>{year}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
+  const minYear: number = uniqueYears.length > 0 ? uniqueYears[0] : 0;
+  const maxYear: number =
+    uniqueYears.length > 0
+      ? uniqueYears[uniqueYears.length - 1]
+      : 0;
+      
+      return (
+        <>
+          {/* — 0) 에러 표시 — */}
+          {error && (
+            <div className="absolute top-4 left-4 z-50 bg-red-500 text-white p-2 rounded shadow">
+              {error}
+            </div>
+          )}
+      
+          {/** ─────────────────────────────────────────────────────────────────
+              1) 왼쪽 필터링 패널 헤더(토글 버튼)
+              ───────────────────────────────────────────────────────────────── */}
+          <div className="fixed top-[64px] left-4 z-40">
+      {/* 1) 헤더만 보여줄 때 (Rounded Pill 모양) */}
+      <div
+        className="
+          bg-white/20 backdrop-blur-md
+          border border-white/40
+          rounded-full
+          px-4 py-2
+          flex items-center justify-between
+          cursor-pointer select-none
+          shadow-lg
+        "
+        onClick={() => setIsYearPanelOpen((prev) => !prev)}
+      >
+        <h2 className="text-sm font-semibold text-white">
+          필터링 패널
+        </h2>
+        <span className="text-white text-xl leading-none">
+          {isYearPanelOpen ? "▾" : "▸"}
+        </span>
       </div>
 
-      {/* — Cesium이 렌더될 DIV (헤더 높이만큼 아래로 내려줍니다) — */}
-      <div
-        ref={viewerRef}
-        style={{
-          position: 'absolute',
-          top: '64px', // 헤더 높이만큼 내려줍니다
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: 'visible', // InfoBox 내부 스크롤이 잘리지 않도록
-        }}
-      />
+      {/* 2) 헤더를 클릭하면 본문(Toggle Content) 펼치기 */}
+      {isYearPanelOpen && (
+        <div
+          className="
+            mt-2
+            bg-white/20 backdrop-blur-md
+            border border-white/40
+            rounded-2xl
+            shadow-lg
+            p-4
+            w-60               /* 원하는 너비(240px)로 설정 */
+            max-h-[90vh] overflow-y-auto
+            space-y-6
+          "
+        >
+          {/* ─────────────────────────────────────────────
+              2-1) 연도 애니메이션 슬라이더 + Play/Pause
+            ───────────────────────────────────────────── */}
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-2">
+              연도별 변화 시뮬레이션
+            </h3>
+            <div className="flex items-center space-x-2">
+              <span className="text-white text-xs">{minYear}</span>
+              <input
+                type="range"
+                min={minYear}
+                max={maxYear}
+                value={currentYear ?? minYear}
+                onChange={(e) => {
+                  const y = Number(e.target.value);
+                  setCurrentYear(y);
+                }}
+                className="w-full"
+              />
+              <span className="text-white text-xs">{maxYear}</span>
+            </div>
+            <button
+              onClick={onClickPlayPause}
+              className={`
+                mt-2 w-full text-sm font-medium rounded
+                ${isPlaying ? "bg-red-600 text-white" : "bg-green-600 text-white"}
+              `}
+            >
+              {isPlaying ? "Pause ⏸️" : "Play ▶️"}
+            </button>
+          </div>
 
-      {/* — 오른쪽 하단: 선택된 그룹이 있을 때 PieChart 표시 — */}
-      {selectedGroup && (
-        <div className="fixed bottom-10 left-64 z-30 w-[400px] max-h-[60vh] overflow-y-auto bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg p-4">
-          <h3 className="font-semibold text-white text-sm mb-2">
-            📊 Organism Distribution
-          </h3>
-          <PieChart data={selectedGroup} />
+          {/* ─────────────────────────────────────────────
+              2-2) Organism 드롭다운 + 검색
+            ───────────────────────────────────────────── */}
+          <div>
+            <label className="block text-white text-xs mb-1">
+              🦠 Organism 선택
+            </label>
+            <select
+              value={organismFilter}
+              onChange={(e) => setOrganismFilter(e.target.value)}
+              className="w-full p-1 text-gray-800 rounded-md text-sm"
+            >
+              <option value="">── 전체 ──</option>
+              {uniqueOrganisms.map((org) => (
+                <option key={org} value={org}>
+                  {org}
+                </option>
+              ))}
+            </select>
+            <label className="block text-white text-xs mt-3 mb-1">
+              🔎 Organism 검색
+            </label>
+            <input
+              type="text"
+              placeholder="Enter organism name..."
+              value={organismFilter}
+              onChange={(e) => setOrganismFilter(e.target.value)}
+              className="w-full p-1 text-gray-800 rounded-md text-sm"
+            />
+          </div>
+
+          {/* ─────────────────────────────────────────────
+              2-3) Sequence 검색
+            ───────────────────────────────────────────── */}
+          <div>
+            <label className="block text-white text-xs mb-1">
+              🔎 Sequence 검색
+            </label>
+            <input
+              type="text"
+              placeholder="Enter sequence substring..."
+              value={sequenceFilter}
+              onChange={(e) => setSequenceFilter(e.target.value)}
+              className="w-full p-1 text-gray-800 rounded-md text-sm"
+            />
+          </div>
+
+          {/* ─────────────────────────────────────────────
+              2-4) Filter by Year (체크박스 멀티셀렉트)
+            ───────────────────────────────────────────── */}
+          <div>
+            <h3 className="text-sm font-semibold mb-2 text-white">
+              📅 Filter by Year
+            </h3>
+            <div className="mb-2">
+              <label className="flex items-center space-x-2 text-white text-sm hover:bg-white/10 rounded-md px-2 py-1">
+                <input
+                  type="checkbox"
+                  checked={selectedYears.length === uniqueYears.length}
+                  onChange={toggleSelectAll}
+                  className="accent-lime-400 focus:ring-2 focus:ring-lime-300"
+                />
+                <span>전체 선택</span>
+              </label>
+            </div>
+            <div className="space-y-1 max-h-48 overflow-y-auto px-1">
+              {uniqueYears.map((year) => {
+                const cesiumColor = yearColorMap[year] || Color.GRAY;
+                const cssHex = cesiumColor.toCssHexString();
+                return (
+                  <label
+                    key={year}
+                    className="flex items-center space-x-2 text-sm text-white hover:bg-white/10 rounded-md px-2 py-1"
+                  >
+                    <input
+                      type="checkbox"
+                      value={year}
+                      checked={selectedYears.includes(year)}
+                      onChange={() => toggleYear(year)}
+                      className="accent-lime-400 focus:ring-2 focus:ring-lime-300"
+                    />
+                    <span
+                      style={{
+                        backgroundColor: cssHex,
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "2px",
+                        display: "inline-block",
+                      }}
+                    />
+                    <span>{year}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+      
+          {/** ─────────────────────────────────────────────────────────────────
+              3) Cesium 뷰어 영역
+              ───────────────────────────────────────────────────────────────── */}
+          <div
+            ref={viewerRef}
+            style={{
+              position: 'absolute',
+              top: '64px',  // 헤더(64px)만큼 아래에서부터 지구 렌더링
+              left: 0,
+              right: 0,
+              bottom: 0,
+              overflow: 'visible',
+            }}
+          />
+      
+          {/** ─────────────────────────────────────────────────────────────────
+              4) PieChart 패널 헤더(토글) + 본문
+              ───────────────────────────────────────────────────────────────── */}
+          {selectedGroup && (
+        <div className="fixed bottom-6 left-6 z-30">
+          {/* 헤더 전체를 둥글게 */}
+          <div
+            className="
+              bg-white/20 backdrop-blur-md
+              border border-white/40
+              rounded-full
+              px-5 py-3
+              flex items-center justify-between
+              cursor-pointer select-none
+              shadow-lg
+              group
+            "
+            onClick={() => setIsPieChartOpen(prev => !prev)}
+          >
+            {/* 아이콘과 제목 */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xl text-white leading-none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  {/* PieChart 아이콘 (예시로 chart-pie 아이콘용 SVG) */}
+                  <path d="M11 2.052a9.001 9.001 0 0 1 9 9c0 4.97-4.03 9-9 9a9.001 9.001 0 0 1-9-9 9.001 9.001 0 0 1 9-9zm0 2a7 7 0 0 0-7 7c0 3.866 3.134 7 7 7 3.866 0 7-3.134 7-7a7 7 0 0 0-7-7zm1 1v6h6.002a7.001 7.001 0 0 0-6.002-6z" />
+                </svg>
+              </span>
+              <span className="text-white font-semibold text-sm">
+                Organism Distribution
+              </span>
+            </div>
+            {/* 토글 아이콘 (오른쪽) */}
+            <span className="text-white text-xl leading-none">
+              {isPieChartOpen ? '▾' : '▸'}
+            </span>
+          </div>
+
+          {/* ─────────────────────────────────────────────
+              PieChart 본문 (isPieChartOpen == true일 때만 표시)
+            ───────────────────────────────────────────── */}
+          {isPieChartOpen && (
+            <div
+              className="
+                mt-2
+                bg-white/20 backdrop-blur-md
+                border border-white/40
+                rounded-2xl
+                shadow-lg
+                p-4
+                w-[350px]  /* 원하는 너비로 조정 가능 */
+                max-h-[50vh] overflow-y-auto
+              "
+            >
+              <PieChart data={selectedGroup} />
+            </div>
+          )}
         </div>
       )}
     </>
   );
-}
+    }      
