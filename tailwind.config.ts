@@ -13,6 +13,10 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        sans: ['Noto Sans KR', 'ui-sans-serif', 'system-ui'], // 기본 폰트에 추가
+        noto: ['Noto Sans KR', 'sans-serif'], // 커스텀 폰트 이름도 가능
+      },
     },
   },
   plugins: [],
