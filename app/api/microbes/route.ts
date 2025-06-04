@@ -19,6 +19,7 @@ export async function GET() {
         latitude: true,
         longitude: true,
         collection_date: true,
+        sequence: true,
         year: true,
       },
     });
