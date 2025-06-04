@@ -65,7 +65,7 @@ export default function MapPage() {
           Microbiome Map
         </h1>
         <span className="text-green-700 text-lg font-bold font-noto">
-           선문대학교 | 컴퓨터공학과 & 제약생명공학과
+           선문대학교 글로벌 센터
         </span>
         {/* <p className="text-green-700 text-lg font-medium">
           Explore your local microbiome data!

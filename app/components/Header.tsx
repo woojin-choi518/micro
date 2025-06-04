@@ -24,6 +24,7 @@ export default function Header() {
             height={40}
             priority
           />
+          <span className="text-xl font-bold tracking-wide font-noto">선문대학교</span>
         </div>
       </nav>
     </header>
