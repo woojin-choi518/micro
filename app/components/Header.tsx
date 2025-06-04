@@ -5,25 +5,28 @@ import Image from 'next/image'
 
 export default function Header() {
   return (
-    <header className="bg-green-600 text-white px-6 py-4 shadow-lg border-b-4 border-green-800">
-      <nav className="max-w-6xl mx-auto flex justify-between items-center">
-        
-        {/* 좌측 링크들 */}
-        <div className="flex space-x-6 text-sm font-medium">
-          <Link href="/map" className="hover:underline text-xl">Map</Link>
-          <Link href="/similarity" className="hover:underline text-xl">Similarity</Link>
-          <Link href="/cesium" className="hover:underline text-xl">Cesium</Link>
+    <header className="bg-green-600 text-white p-4">
+      <nav className="max-w-6xl mx-auto flex justify-between items-center flex-wrap">
+        {/* 왼쪽: 메뉴 */}
+        <div className="flex space-x-6">
+          <Link href="/map" className="hover:underline">Map</Link>
+          <Link href="/similarity" className="hover:underline">Similarity</Link>
+          <Link href="/cesium" className="hover:underline">Cesium</Link>
         </div>
 
-        {/* 우측 로고 및 텍스트 */}
-        <div className="flex items-center space-x-2">
-          <Image
-            src="/images/sunmoonLogo.svg"
-            alt="Sunmoon University Logo"
-            width={40}
-            height={40}
-            priority
-          />
+        {/* 오른쪽: 로고와 텍스트 */}
+        <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+          <div className="w-8 h-8 relative">
+            <Image
+              src="/images/sunmoonLogo.svg" // 실제 경로로 수정
+              alt="Sunmoon Logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <span className="font-bold whitespace-nowrap text-sm sm:text-base">
+            선문대학교
+          </span>
         </div>
       </nav>
     </header>
