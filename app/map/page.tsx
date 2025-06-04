@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Sample } from '@/app/lib/types'
 import SearchInput from '../components/SearchInput'
+import Image from 'next/image'
 
 const Map = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -63,9 +64,12 @@ export default function MapPage() {
         <h1 className="text-4xl font-extrabold text-green-700 mb-2">
           Microbiome Map
         </h1>
-        <p className="text-green-700 text-lg font-medium">
+        <span className="text-green-700 text-lg font-bold font-noto">
+           선문대학교 | 컴퓨터공학과 & 제약생명공학과
+        </span>
+        {/* <p className="text-green-700 text-lg font-medium">
           Explore your local microbiome data!
-        </p>
+        </p> */}
       </motion.div>
 
       {/* Stats */}
@@ -141,9 +145,18 @@ export default function MapPage() {
       </motion.div>
 
       {/* Footer */}
-      <footer className="mt-12 text-center text-xs text-gray-400">
-        Data Source: Earth Microbiome Project
+      <footer className="mt-10 text-center text-sm text-gray-500">
+        <div className="flex justify-center items-center space-x-2">
+          <Image
+            src="/images/sunmoonLogo.svg"
+            alt="Sunmoon Logo"
+            width={24}
+            height={24}
+          />
+         <p>ⓒ 2025 Sunmoon University – 컴퓨터공학과 & 제약생명공학과</p>
+        </div>
       </footer>
+
     </main>
   )
 }
