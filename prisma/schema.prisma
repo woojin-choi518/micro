@@ -48,3 +48,20 @@ model PolarMicrobe {
   sequence        String?
   createdAt       DateTime? @default(now()) @db.Timestamp(6)
 }
+
+model LocationInfo {
+  id        Int     @id @default(autoincrement())
+  location  String  @db.VarChar(10)
+  city      String  @db.VarChar(50)
+  latitude  Float
+  longitude Float
+  species   String  @db.VarChar(50)
+  yield_g   Float?
+  diversity Float?
+  main_microbiome String?  @db.VarChar(255)
+  contribution String?  @db.VarChar(255)
+
+
+  @@index([location], name: "idx_location_info_location")
+  @@index([species],  name: "idx_location_info_species")
+}
