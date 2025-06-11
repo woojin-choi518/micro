@@ -48,3 +48,15 @@ export interface Microbe {
   sequence: string;
   createdAt?: string | null; 
 }
+
+export interface LocationInfo {
+  location: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  species: string;
+  yield_g: number;
+  diversity: number;
+  main_microbiome: string;
+  contribution: string;
+}

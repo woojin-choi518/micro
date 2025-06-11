@@ -62,7 +62,7 @@ export default function FilterPanel({
   }, [uniqueYears]);
 
   return (
-    <div className="fixed top-[64px] left-4 z-40">
+    <div className="fixed top-[70px] left-4 z-40">
       {/* 1) 패널 헤더 (토글) */}
       <div
         className="

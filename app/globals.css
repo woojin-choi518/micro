@@ -49,3 +49,35 @@ body {
     left: 100%;
   }
 }
+
+
+/* 1) 모드바 전체 컨테이너 위치만 고정 */
+/* 1) 패널 내부에 modebar-container 위치 고정 (이미 적용하셨겠지만) */
+.violin-wrapper .modebar-container {
+  position: absolute !important;
+  top: 12px !important;
+  right: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  pointer-events: all !important;
+  background: none !important;       /* 컨테이너 배경 제거 */
+}
+
+/* 2) 모드바 자체 배경은 유지하되 */
+.violin-wrapper .modebar {
+  background: rgba(255,255,255,1.0) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* 3) 핵심 – 각 아이콘 뒤의 <rect>만 투명 처리 */
+.violin-wrapper .modebar-btn svg rect {
+  fill: transparent !important;
+}
+
+/* 4) 호버/클릭에도 절대 회색 사각이 보이지 않도록 */
+.violin-wrapper .modebar-btn:hover svg rect,
+.violin-wrapper .modebar-btn:active svg rect {
+  fill: transparent !important;
+}
