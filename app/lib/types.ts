@@ -74,3 +74,24 @@ export interface ProtectedTree {
   latitude: number;
   longitude: number;
 }
+
+export enum SampleGroup {
+  ASH = "ASH",
+  BSD = "BSD",
+  NSH = "NSH",
+  NSD = "NSD",
+}
+
+export interface TreeSample {
+  id: number;
+  group: SampleGroup;
+  area: string;
+  latitude: number;
+  longitude: number;
+  declineSymptoms: boolean;
+  replicates: string;
+  springSampling: string;
+  summerSampling: string;    
+  compartments: string;
+  microorganisms: string;
+}
