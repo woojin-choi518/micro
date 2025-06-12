@@ -92,3 +92,26 @@ model ProtectedTree {
 
   @@map("protected_tree")
 }
+
+enum SampleGroup {
+  ASH
+  BSD
+  NSH
+  NSD
+}
+
+model TreeSample {
+  id                Int          @id @default(autoincrement())
+  group             SampleGroup
+  area              String
+  latitude          Float
+  longitude         Float
+  declineSymptoms   Boolean
+  replicates        String
+  springSampling    DateTime
+  summerSampling    DateTime
+  compartments      String
+  microorganisms    String
+
+  @@map("tree_samples")
+}

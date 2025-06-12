@@ -6,6 +6,7 @@ import {
   useJsApiLoader,
   Marker,
   InfoWindow,
+  Circle,
 } from '@react-google-maps/api';
 import type { ProtectedTree } from '@/app/lib/types';
 
@@ -14,13 +15,14 @@ const containerStyle = {
   height: '100vh',
 };
 
-const GONGJU_CENTER = { lat: 36.45, lng: 127.12 }; // 공주시 중심
-const DEFAULT_ZOOM = 13; // 줌 레벨 증가
+const GONGJU_CENTER = { lat: 36.50, lng: 127.06 }; // 공주시 중심
+const DEFAULT_ZOOM = 11; // 전체 영역을 보기 위한 줌 레벨
+const GONGJU_RADIUS = 17000; // 공주시 대략적인 반경 (미터 단위, 조정 가능)
 
 export default function TreeMapPage() {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: ['geometry'], // geometry 라이브러리 추가
+    libraries: ['geometry'], // geometry 라이브러리 (Circle에 필요)
   });
 
   const [trees, setTrees] = useState<ProtectedTree[]>([]);
@@ -41,12 +43,12 @@ export default function TreeMapPage() {
     if (isLoaded && window.google) {
       setDefaultIcon({
         url: '/images/tree.png',
-        scaledSize: new window.google.maps.Size(48, 48), // 아이콘 크기 증가
+        scaledSize: new window.google.maps.Size(48, 48),
         anchor: new window.google.maps.Point(24, 48),
       });
       setSelectedIcon({
         url: '/images/tree_s.png',
-        scaledSize: new window.google.maps.Size(48, 48), // 아이콘 크기 증가
+        scaledSize: new window.google.maps.Size(48, 48),
         anchor: new window.google.maps.Point(24, 48),
       });
     }
@@ -54,7 +56,7 @@ export default function TreeMapPage() {
 
   // 3) 맵 로드 시 중심을 공주시로 맞춤
   const onMapLoad = useCallback((map: google.maps.Map) => {
-    map.setCenter(GONGJU_CENTER); // 맵 로드 후 강제로 중심 설정
+    map.setCenter(GONGJU_CENTER);
   }, []);
 
   if (loadError) return <div>지도 로드 실패: {loadError.message}</div>;
@@ -69,12 +71,28 @@ export default function TreeMapPage() {
     <>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={GONGJU_CENTER} // 초기 중심 설정
+        center={GONGJU_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={onMapLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
-        {/* 4) 마커 렌더링 */}
+        {/* 4) 공주시를 예쁜 원으로 강조 */}
+        <Circle
+          center={GONGJU_CENTER}
+          radius={GONGJU_RADIUS} // 15km 반경
+          options={{
+            fillColor: 'rgba(235, 200, 135, 0.4)', // 부드러운 하늘색 채우기
+            fillOpacity: 0.4,
+            strokeColor: 'rgb(255, 75, 43)', // 하늘색 선 (부드러운 느낌)
+            strokeOpacity: 0.8,
+            strokeWeight: 3, // 약간 두꺼운 선
+            clickable: false,
+            draggable: false,
+            editable: false,
+          }}
+        />
+
+        {/* 5) 마커 렌더링 (중앙 마커 제거) */}
         {trees.map((tree) => {
           const key = `${tree.designationNumber}-${tree.latitude}-${tree.longitude}`;
           const isSelected = key === selectedKey;
@@ -91,18 +109,12 @@ export default function TreeMapPage() {
           );
         })}
 
-        {/* 5) 선택된 마커 위에 InfoWindow */}
+        {/* 6) 선택된 마커 위에 InfoWindow */}
         {selectedTree && (
           <InfoWindow
             key={selectedKey!}
-            position={{
-              lat: selectedTree.latitude,
-              lng: selectedTree.longitude,
-            }}
-            options={{
-              pixelOffset: new window.google.maps.Size(0, -80), // 아이콘 크기 증가에 맞춰 조정
-              disableAutoPan: false,
-            }}
+            position={{ lat: selectedTree.latitude, lng: selectedTree.longitude }}
+            options={{ pixelOffset: new window.google.maps.Size(0, -80), disableAutoPan: false }}
             onCloseClick={() => setSelectedKey(null)}
           >
             <div className="info-window-card">
@@ -144,7 +156,7 @@ export default function TreeMapPage() {
         )}
       </GoogleMap>
 
-      {/* 6) styled-jsx로 카드 디자인 */}
+      {/* 7) styled-jsx로 카드 디자인 */}
       <style jsx>{`
         .info-window-card {
           position: relative;
