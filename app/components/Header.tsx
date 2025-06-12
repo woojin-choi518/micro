@@ -10,8 +10,10 @@ export default function Header() {
         {/* 왼쪽: 메뉴 */}
         <div className="flex space-x-6">
           <Link href="/map" className="hover:underline">Map</Link>
-          <Link href="/similarity" className="hover:underline">Similarity</Link>
-          <Link href="/cesium" className="hover:underline">Cesium</Link>
+          <Link href="/similarity" className="hover:underline">유사도</Link>
+          <Link href="/cesium" className="hover:underline">오염</Link>
+          <Link href="/tree" className="hover:underline">보호수</Link>
+          <Link href="/prod" className='hover:underline'>농작물</Link>
         </div>
 
         {/* 오른쪽: 로고와 텍스트 */}

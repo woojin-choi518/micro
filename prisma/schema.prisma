@@ -65,3 +65,30 @@ model LocationInfo {
   @@index([location], name: "idx_location_info_location")
   @@index([species],  name: "idx_location_info_species")
 }
+
+model ProtectedTree {
+  id                        Int       @id @default(autoincrement()) @map("id")
+  provinceName              String    @map("province_name")
+  districtName              String    @map("district_name")
+  managingAgency            String?   @map("managing_agency")
+  designationNumber         String?   @map("designation_number")
+  protectionDesignationDate DateTime? @map("protection_designation_date")
+  protectionRevocationDate  DateTime? @map("protection_revocation_date")
+  protectionType            String?   @map("protection_type")
+  familyName                String?   @map("family_name")
+  scientificName            String?   @map("scientific_name")
+  treeCategory              String?   @map("tree_category")
+  treeCount                 Int?      @map("tree_count")
+  treeAge                   Int?      @map("tree_age")
+  treeHeight                Float?    @map("tree_height")
+  breastHeightCircumference Float?    @map("breast_height_circumference")
+  crownDiameter             Float?    @map("crown_diameter")
+  grade                     String?   @map("grade")
+  landUseCategory           String?   @map("land_use_category")
+  roadNameAddress           String?   @map("road_name_address")  
+  latitude             Float?    @map("wgs84_latitude")
+  longitude            Float?    @map("wgs84_longitude")
+  dataReferenceDate         DateTime? @map("data_reference_date")
+
+  @@map("protected_tree")
+}
