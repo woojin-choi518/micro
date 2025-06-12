@@ -21,19 +21,13 @@ import {
   CallbackProperty,
   ConstantProperty,
   Color,
-  ScreenSpaceEventHandler,
-  ScreenSpaceEventType,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 
-import { Microbe, LocationInfo } from '@/app/lib/types';
+import { Microbe } from '@/app/lib/types';
 import FilterPanel from './FilterPanel';
 import PieChartPanel from './PieChartPanel';
-import SoybeanMarkers from './SoybeanMarker';
 import { useAddPollutantMarkers } from './PollutantMarkers';
-import ViolinChartPanel from './ViolinChartPanel';
-import FloatingPanel from './FloatingPanel';
-import { seedYieldData } from '@/app/lib/seedYieldData';
 
 
 // Cesium 정적 리소스 경로 설정 (public/Cesium 아래에 리소스가 있어야 함)
@@ -51,14 +45,11 @@ export default function CesiumViewer() {
 
   // Microbe 전용 DataSource
   const microbeDataSourceRef = useRef<CustomDataSource | null>(null);
-  // Soybean 전용 DataSource
-  const soybeanDataSourceRef = useRef<CustomDataSource | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+ 
 
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [microbes, setMicrobes] = useState<Microbe[]>([]);
-  const [locations, setLocations] = useState<LocationInfo[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [isViewerInitialized, setIsViewerInitialized] = useState(false);
@@ -113,7 +104,7 @@ export default function CesiumViewer() {
 
   // ─────────── 3. Microbe 데이터 Fetch ───────────
   useLayoutEffect(() => {
-    fetch('/api/microbes')
+    fetch('/api/microbes?startYear=2010&endYear=2015')
       .then((res) => res.json())
       .then((data: Microbe[]) => setMicrobes(data))
       .catch((err) => {
@@ -122,18 +113,6 @@ export default function CesiumViewer() {
       });
   }, []);
 
-  // ─────────── 4. Soybean(LocationInfo) 데이터 Fetch ───────────
-  useLayoutEffect(() => {
-    fetch('/api/soybean')
-      .then((res) => res.json())
-      .then((data: LocationInfo[]) => {
-        setLocations(data);
-      })
-      .catch((err) => {
-        console.error('Fetch /api/soybean error:', err);
-        setError('Failed to load location data.');
-      });
-  }, []);
 
   // ─────────── 5. currentYear 변경 시 selectedYears 덮어쓰기 (애니메이션 모드) ───────────
   useEffect(() => {
@@ -234,12 +213,6 @@ export default function CesiumViewer() {
         mds.clustering.enabled = false;
         microbeDataSourceRef.current = mds;
         await viewer.dataSources?.add(mds);
-
-        // (B) Soybean 전용 DataSource 생성
-        const sds = new CustomDataSource('soybeans');
-        sds.clustering.enabled = false;
-        soybeanDataSourceRef.current = sds;
-        await viewer.dataSources?.add(sds);
 
         if (!isMounted) return;
         setIsViewerInitialized(true);
@@ -381,49 +354,6 @@ export default function CesiumViewer() {
   useAddPollutantMarkers(viewerInstance.current, isViewerInitialized);
   
 
-  // ─────────── 10. “prod-/div- 클릭 시 central point 선택” 로직 ───────────
-  useEffect(() => {
-    if (!isViewerInitialized) return;
-    const viewer = viewerInstance.current!;
-    const sds = soybeanDataSourceRef.current!;
-    if (!viewer || !sds) return;
-
-    // 이미 핸들러가 있다면 중복 등록을 막기 위해 return
-    const existingHandler = (viewer as any)._soybeanClickHandlerRegistered;
-    if (existingHandler) {
-      return;
-    }
-
-    const handler = new ScreenSpaceEventHandler(viewer.canvas);
-    handler.setInputAction((clickEvent: any) => {
-      const picked = viewer.scene.pick(clickEvent.position);
-      // 1) prod-/div- 클릭했을 때: 해당 지역만 선택
-      if (picked && picked.id) {
-        const clickedId = String(picked.id.id);
-        if (clickedId.startsWith('prod-') || clickedId.startsWith('div-')) {
-          const locationCode = clickedId.split('-')[1];
-          const central = sds.entities.getById(`point-${locationCode}`);
-          if (central) {
-            viewer.selectedEntity = central;
-            setSelectedRegion(locationCode);
-          }
-          return; // 이 경우만 선택 유지
-        }
-      }
-      // 2) 그 외(배경, 마이크로브, 중앙점, 다른 UI) 클릭 시: 선택 해제
-      setSelectedRegion(null);
-      setSelectedGroup(null);
-      setIsPieChartOpen(false);
-      }, ScreenSpaceEventType.LEFT_CLICK);
-
-    // 중복 등록 방지를 위해, viewer 인스턴스에 플래그 달기
-    (viewer as any)._soybeanClickHandlerRegistered = true;
-    return () => {
-      handler.destroy();
-      (viewer as any)._soybeanClickHandlerRegistered = false;
-    };
-  }, [isViewerInitialized, setSelectedRegion]);
-
   // ─────────── 11. 체크박스 토글 함수 ───────────
   const toggleYear = useCallback(
     (year: number) => {
@@ -539,13 +469,6 @@ export default function CesiumViewer() {
         }}
       />
 
-      {/* 3) SoybeanMarkers 호출: Soybean 전용 데이터소스를 전달 */}
-      <SoybeanMarkers
-        dataSource={soybeanDataSourceRef.current}
-        locations={locations}
-        isViewerInitialized={isViewerInitialized}
-      />
-
       {/* 4) PieChartPanel (selectedGroup이 있을 때만 렌더링) */}
       {selectedGroup && (
         <PieChartPanel
@@ -559,22 +482,6 @@ export default function CesiumViewer() {
         />
       )}
 
-      {/* 5) ViolinChartPanel: 항상 렌더, 클릭한 지역이 있으면 강조 */}
-      {selectedRegion && (
-        <FloatingPanel className=" 
-          fixed left-0 right-0 bottom-8 
-          sm:left-1/2 sm:transform sm:-translate-x-1/2
-          sm:w-[480px] sm:h-[300px]
-          w-full h-[28vh]
-          h-auto
-          z-40
-          ">
-          <ViolinChartPanel
-            data={seedYieldData}
-            selectedRegion={selectedRegion}
-          />
-        </FloatingPanel>
-      )}
     </>
   );
 }

@@ -1,17 +1,30 @@
-// ✅ 1. API Route: app/api/microbes/route.ts
-// Fetch PolarMicrobe data from DB and return as JSON
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const startYear = searchParams.get('startYear');
+    const endYear = searchParams.get('endYear');
+
+    // 쿼리 조건 구성
+    const where: any = {
+      latitude: { not: null },
+      longitude: { not: null },
+    };
+
+    // startYear와 endYear가 제공된 경우 year 필터 추가
+    if (startYear && endYear) {
+      where.year = {
+        gte: parseInt(startYear),
+        lte: parseInt(endYear),
+      };
+    }
+
     const microbes = await prisma.polarMicrobe.findMany({
-      where: {
-        latitude: { not: null },
-        longitude: { not: null },
-      },
+      where,
       select: {
         id: true,
         ncbi_id: true,
@@ -23,9 +36,12 @@ export async function GET() {
         year: true,
       },
     });
+
     return NextResponse.json(microbes);
   } catch (error) {
     console.error('API Error:', error);
     return new NextResponse('Failed to fetch microbes', { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
