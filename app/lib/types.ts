@@ -60,3 +60,17 @@ export interface LocationInfo {
   main_microbiome: string;
   contribution: string;
 }
+
+export interface ProtectedTree {
+  provinceName: string;
+  districtName: string;
+  managingAgency: string | null;
+  designationNumber: string | null;
+  protectionDesignationDate: string | null;  // ISO 날짜 문자열
+  scientificName: string | null;
+  treeCategory: string | null;
+  treeAge: number | null;
+  roadNameAddress: string | null;
+  latitude: number;
+  longitude: number;
+}

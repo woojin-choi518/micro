@@ -13,11 +13,13 @@
     "db:migrate": "npx prisma migrate dev && npx prisma generate"
   },
   "dependencies": {
+    "@googlemaps/markerclustererplus": "^1.2.10",
     "@nivo/bar": "^0.89.1",
     "@nivo/core": "^0.89.1",
     "@nivo/pie": "^0.89.1",
     "@nivo/treemap": "^0.89.1",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.9.0",
+    "@react-google-maps/api": "^2.20.6",
     "@types/recharts": "^1.8.29",
     "cesium": "^1.114.0",
     "clsx": "^2.1.1",
@@ -25,6 +27,8 @@
     "csv-parser": "^3.2.0",
     "d3": "^7.9.0",
     "framer-motion": "^12.6.3",
+    "google-maps": "^4.3.3",
+    "iconv-lite": "^0.6.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.488.0",
     "neo4j-driver": "^5.28.1",

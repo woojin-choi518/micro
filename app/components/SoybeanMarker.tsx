@@ -124,7 +124,7 @@ export default function SoybeanMarkers({
         },
         label: {
           text: `${city} (${location})`,
-          font: 'bold 14px sans-serif',
+          font: 'bold 16px sans-serif',
           fillColor: Color.WHITE,
           outlineColor: Color.BLACK,
           outlineWidth: 2,
@@ -132,7 +132,7 @@ export default function SoybeanMarkers({
           backgroundColor: Color.fromAlpha(Color.BLACK, 0.6),
           backgroundPadding: new Cartesian3(6, 4, 0),
           verticalOrigin: VerticalOrigin.TOP,
-          pixelOffset: new Cartesian3(0, -20, 0),
+          pixelOffset: new Cartesian3(0, -60, 0),
         },
         // “중앙 점”만 InfoBox 담당 → 클릭 시 이곳의 name/description이 뜬다.
         name: `${city} (${location})`,
