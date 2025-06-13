@@ -1,46 +1,37 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GoogleMap,
-  useJsApiLoader,
   Marker,
   InfoWindow,
   Circle,
 } from '@react-google-maps/api';
 import type { ProtectedTree } from '@/app/lib/types';
 
-const containerStyle = {
-  width: '100%',
-  height: '100vh',
-};
-
-const GONGJU_CENTER = { lat: 36.50, lng: 127.06 }; // 공주시 중심
-const DEFAULT_ZOOM = 11; // 전체 영역을 보기 위한 줌 레벨
-const GONGJU_RADIUS = 17000; // 공주시 대략적인 반경 (미터 단위, 조정 가능)
+const containerStyle = { width: '100%', height: '100vh' };
+const GONGJU_CENTER = { lat: 36.5, lng: 127.06 };
+const DEFAULT_ZOOM = 11;
+const GONGJU_RADIUS = 17000;
 
 export default function TreeMapPage() {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: ['geometry'], // geometry 라이브러리 (Circle에 필요)
-  });
-
   const [trees, setTrees] = useState<ProtectedTree[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [defaultIcon, setDefaultIcon] = useState<any>(null);
-  const [selectedIcon, setSelectedIcon] = useState<any>(null);
+  const [defaultIcon, setDefaultIcon] =
+    useState<google.maps.Icon | null>(null);
+  const [selectedIcon, setSelectedIcon] =
+    useState<google.maps.Icon | null>(null);
 
-  // 1) API에서 보호수 데이터 로드
+  // 1) 보호수 데이터 fetch
   useEffect(() => {
     fetch('/api/trees')
       .then((res) => res.json())
-      .then((data: ProtectedTree[]) => setTrees(data))
-      .catch(console.error);
+      .then((data: ProtectedTree[]) => setTrees(data));
   }, []);
 
-  // 2) Google Maps API 로드 후 아이콘 초기화
+  // 2) 아이콘 초기화
   useEffect(() => {
-    if (isLoaded && window.google) {
+    if (window.google && !defaultIcon) {
       setDefaultIcon({
         url: '/images/tree.png',
         scaledSize: new window.google.maps.Size(48, 48),
@@ -52,19 +43,17 @@ export default function TreeMapPage() {
         anchor: new window.google.maps.Point(24, 48),
       });
     }
-  }, [isLoaded]);
+  }, [defaultIcon]);
 
-  // 3) 맵 로드 시 중심을 공주시로 맞춤
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    map.setCenter(GONGJU_CENTER);
-  }, []);
+  // 3) 아이콘 준비 전 로딩 표시
+  if (!defaultIcon || !selectedIcon) {
+    return <div className="p-4">지도 아이콘 로딩 중…</div>;
+  }
 
-  if (loadError) return <div>지도 로드 실패: {loadError.message}</div>;
-  if (!isLoaded || !defaultIcon || !selectedIcon) return <div>지도 로딩 중...</div>;
-
-  // 선택된 나무 객체 찾기
   const selectedTree = selectedKey
-    ? trees.find((t) => `${t.designationNumber}-${t.latitude}-${t.longitude}` === selectedKey)
+    ? trees.find(
+        (t) => `${t.designationNumber}-${t.latitude}-${t.longitude}` === selectedKey
+      ) || null
     : null;
 
   return (
@@ -73,7 +62,6 @@ export default function TreeMapPage() {
         mapContainerStyle={containerStyle}
         center={GONGJU_CENTER}
         zoom={DEFAULT_ZOOM}
-        onLoad={onMapLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {/* 4) 공주시를 예쁜 원으로 강조 */}
