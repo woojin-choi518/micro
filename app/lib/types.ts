@@ -95,3 +95,18 @@ export interface TreeSample {
   compartments: string;
   microorganisms: string;
 }
+
+export interface Metric {
+  kingdom: string;
+  season: string;
+  meanRawReads: number;
+  meanFilteredReads: number;
+}
+
+export interface PhylumAbundance {
+  compartment: string;
+  phylum: string;
+  minPct: number;
+  maxPct: number;
+
+}

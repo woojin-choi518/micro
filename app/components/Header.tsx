@@ -13,6 +13,7 @@ export default function Header() {
           <Link href="/cesium" className="hover:underline">오염</Link>
           <Link href="/tree" className="hover:underline">보호수</Link>
           <Link href="/prod" className='hover:underline'>농작물</Link>
+          <Link href="/trees" className='hover:underline'>유럽농작물</Link>
         </div>
       </nav>
     </header>

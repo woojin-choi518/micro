@@ -1,44 +1,45 @@
-// app/api/trees/route.ts
+// app/api/eu-trees/route.ts
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const samples = await prisma.treeSample.findMany({
-      select: {
-        id: true,
-        group: true,
-        area: true,
-        latitude: true,
-        longitude: true,
-        declineSymptoms: true,
-        replicates: true,
-        springSampling: true,
-        summerSampling: true,
-        compartments: true,
-        microorganisms: true,
-      },
-      orderBy: { id: 'asc' },
-    })
+    const [trees, metrics, phylums] = await Promise.all([
+      // your protected‐tree data
+      prisma.treeSample.findMany({
+        select: {
+          id: true,
+          group: true,
+          area: true,
+          latitude: true,
+          longitude: true,
+          declineSymptoms: true,
+          replicates: true,
+          springSampling: true,
+          summerSampling: true,
+          compartments: true,
+          microorganisms: true,
+        },
+        orderBy: { id: 'asc' },
+      }),
+      // sequencing metrics
+      prisma.metric.findMany({
+        orderBy: { id: 'asc' },
+      }),
+      // phylum abundance ranges
+      prisma.phylumAbundance.findMany({
+        orderBy: { id: 'asc' },
+      }),
+    ]);
 
-    // Date → ISO 문자열로 변환
-    const payload = samples.map(s => ({
-      ...s,
-      springSampling: s.springSampling.toISOString(),
-      summerSampling: s.summerSampling.toISOString(),
-    }))
-
-    return NextResponse.json(payload, { status: 200 })
-  } catch (error) {
-    console.error('API /api/trees error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch tree samples' },
-      { status: 500 }
-    )
+    return NextResponse.json({ trees, metrics, phylums }, { status: 200 });
+  } catch (err) {
+    console.error('GET /api/eu-trees error', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
