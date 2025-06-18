@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'; // 동적 라우팅 명시
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {

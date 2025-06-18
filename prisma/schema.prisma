@@ -115,3 +115,36 @@ model TreeSample {
 
   @@map("tree_samples")
 }
+
+model Metric {
+  id               Int     @id @default(autoincrement())
+  kingdom          String           // "bacteria" | "fungi"
+  season           String           // "spring" | "summer"
+  meanRawReads     Int
+  meanFilteredReads Int
+
+  @@map("metrics")
+}
+
+model PhylumAbundance {
+  id          Int     @id @default(autoincrement())
+  compartment String           // "rhizosphere" | "endosphere"
+  phylum      String
+  minPct      Float
+  maxPct      Float
+
+  @@map("phylum_abundance")
+}
+
+model LivestockFarm {
+  id               Int     @id @default(autoincrement())
+  farmName         String  @map("farm_name")
+  livestockType    String  @map("livestock_type")
+  landAddress      String  @map("land_address")
+  roadAddress      String?  @map("road_address")
+  livestockCount   Int     @map("livestock_count")
+  barnCount        Int     @map("barn_count")
+  areaSqm          Float   @map("area_sqm")
+  latitude         Float?
+  longitude        Float?
+}
