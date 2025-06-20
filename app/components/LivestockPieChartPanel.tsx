@@ -40,17 +40,17 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
   }, [onToggle]);
 
   return (
-    <div className="fixed bottom-6 left-4 right-4 sm:right-auto z-30">
+    <div className="fixed bottom-6 left-4 right-4 sm:right-auto z-30 ">
       {/* 🔘 토글 헤더 */}
       <div
         className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
         onClick={handleToggle}
       >
-        <div className="flex items-center space-x-2">
-          <svg className="h-5 w-5 text-teal-300" fill="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center space-x-2 ">
+          <svg className="h-5 w-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
           </svg>
-          <span className="text-white font-bold text-sm tracking-wide">
+          <span className="text-white font-bold text-m tracking-wide font-sans">
             축종별 농가 통계
           </span>
         </div>
@@ -65,9 +65,10 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
         <div
           className="
             mt-2
-            bg-white/20 backdrop-blur-md
-            border border-white/30
-            rounded-xl
+            bg-gradient-to-br from-teal-900/10 to-blue-900/10
+            backdrop-blur-md
+            border-2 border-teal-300
+            rounded-2xl
             shadow-lg
             px-4 py-4
             w-full sm:w-[440px]
@@ -75,7 +76,7 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
             overflow-y-auto
           "
         >
-            <span className='text-gray-400 text-sm'>데이터 수정일 : 2025-06-02</span>
+            <span className='text-gray-600 text-sm font-bold font-sans'>데이터 수정일 : 2025-06-02</span>
             <PieChart data={chartData} />
         </div>
       )}

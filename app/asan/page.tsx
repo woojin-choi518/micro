@@ -1,39 +1,86 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   GoogleMap,
   Marker,
   InfoWindow,
 } from '@react-google-maps/api';
 import type { LivestockFarm } from '@/app/lib/types';
-import LivestockFilterPanel from '@/app/components/LivestockFilterPanel';
+import LivestockCombinedFilterPanel from '@/app/components/LivestockCombinedFilterPanel';
 import LivestockPieChartPanel from '@/app/components/LivestockPieChartPanel';
+import { scaleRanges } from '@/app/lib/livestockScaleRanges';
 
 const containerStyle = { width: '100%', height: '100vh' };
 const ASAN_CENTER = { lat: 36.79, lng: 127.0 };
 const DEFAULT_ZOOM = 11;
 
-// 축종별 아이콘 매핑
+// 축종별 아이콘 경로 매핑
 const iconMap: Record<string, string> = {
-  '돼지': '/images/pig.png',
-  '사슴': '/images/deer.png',
-  '산양': '/images/mountain-goat.png',
-  '염소': '/images/goat.png',
-  '오리': '/images/duck.png',
-  '육우': '/images/cow.png',
-  '젖소': '/images/cow.png',
-  '한우': '/images/cow.png',
-  '메추리': '/images/me.png',
+  돼지: '/images/pig.png',
+  사슴: '/images/deer.png',
+  산양: '/images/mountain-goat.png',
+  염소: '/images/goat.png',
+  오리: '/images/duck.png',
+  육우: '/images/cow.png',
+  젖소: '/images/cow.png',
+  한우: '/images/cow.png',
+  메추리: '/images/me.png',
   '종계/산란계': '/images/chicken.png',
-  '육계': '/images/chicken.png',
+  육계: '/images/chicken.png',
+};
+
+// 가축 타입 → 규모 그룹 매핑
+const typeToGroup: Record<string, string> = {
+  한우: '소',
+  육우: '소',
+  젖소: '소',
+  돼지: '돼지',
+  '종계/산란계': '닭',
+  육계: '닭',
+  오리: '오리',
+  // 사슴, 염소, 메추리, 산양 등은 규모 필터 미적용
 };
 
 export default function FarmMapPage() {
+  // 1) 농가 전체 데이터
   const [farms, setFarms] = useState<LivestockFarm[]>([]);
+  // 2) InfoWindow 표시용 선택 ID
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // 농가 데이터 가져오기
+  // 3) 축종 필터 상태
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const allTypes = useMemo(
+    () => Array.from(new Set(farms.map((f) => f.livestock_type))),
+    [farms]
+  );
+
+  // 4) 그룹별 규모 필터 상태
+  const groupKeys = useMemo(() => Object.keys(scaleRanges), []);
+  const initialScales = useMemo(
+    () =>
+      groupKeys.reduce((acc, group) => {
+        const ranges = scaleRanges[group];
+        acc[group] = {
+          min: ranges[0].min,
+          max: ranges[ranges.length - 1].max,
+        };
+        return acc;
+      }, {} as Record<string, { min: number; max: number | null }>),
+    [groupKeys]
+  );
+  const [selectedScales, setSelectedScales] = useState(initialScales);
+
+  // 5) 파이 차트 토글
+  const [isChartOpen, setChartOpen] = useState(false);
+  const toggleChart = useCallback(() => setChartOpen((v) => !v), []);
+
+  // — 데이터 로드
   useEffect(() => {
     const fetchFarms = async () => {
       try {
@@ -49,45 +96,69 @@ export default function FarmMapPage() {
     fetchFarms();
   }, []);
 
-  const selectedFarm = farms.find((f) => f.id === selectedId) ?? null;
-
-  // 축종 필터 상태
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const allTypes = useMemo(() => Array.from(new Set(farms.map(f => f.livestock_type))), [farms]);
+  // — 초기 축종 전체 선택
   useEffect(() => {
-    setSelectedTypes(allTypes); // 초기에 전체 선택
+    setSelectedTypes(allTypes);
   }, [allTypes]);
 
+  // 축종 토글 핸들러
   const handleToggleType = useCallback((type: string) => {
-    setSelectedTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   }, []);
 
-  const handleToggleAll = useCallback(() => {
-    setSelectedTypes(selectedTypes.length === allTypes.length ? [] : allTypes);
-  }, [selectedTypes, allTypes]);
+  // 전체 선택/해제
+  const handleToggleAllTypes = useCallback(() => {
+    setSelectedTypes((prev) =>
+      prev.length === allTypes.length ? [] : allTypes
+    );
+  }, [allTypes]);
 
-  const visibleFarms = useMemo(() => farms.filter(f => selectedTypes.includes(f.livestock_type)), [farms, selectedTypes]);
-  const [isChartOpen, setChartOpen] = useState(true);
-  const toggleChart = useCallback(() => setChartOpen(v => !v), []);
+  // 규모 필터 변경 핸들러
+  const handleScaleChange = useCallback(
+    (group: string, range: { min: number; max: number | null }) => {
+      setSelectedScales((prev) => ({
+        ...prev,
+        [group]: range,
+      }));
+    },
+    []
+  );
 
-  
+  // — 필터링 적용 (축종 + 규모)
+  const visibleFarms = useMemo(() => {
+    return farms
+      // 1) 축종 필터
+      .filter((f) => selectedTypes.includes(f.livestock_type))
+      // 2) 규모 필터 (매핑된 그룹에만)
+      .filter((f) => {
+        const grp = typeToGroup[f.livestock_type];
+        if (!grp) return true;
+        const { min, max } = selectedScales[grp];
+        if (f.livestock_count < min) return false;
+        if (max !== null && f.livestock_count >= max) return false;
+        return true;
+      });
+  }, [farms, selectedTypes, selectedScales]);
+
+  const selectedFarm = farms.find((f) => f.id === selectedId) ?? null;
 
   return (
     <div className="relative">
-      {/* 필터 패널 */}
-      <div className="absolute top-4 left-4 z-10">
-        <LivestockFilterPanel
+      {/* ◼ 통합 필터 패널: top-left */}
+      <div className="absolute top-4 left-4 z-20">
+        <LivestockCombinedFilterPanel
           livestockTypes={allTypes}
-          selected={selectedTypes}
-          onToggle={handleToggleType}
-          onToggleAll={handleToggleAll}
-          allSelected={selectedTypes.length === allTypes.length}
+          selectedTypes={selectedTypes}
+          onToggleType={handleToggleType}
+          onToggleAllTypes={handleToggleAllTypes}
+          allTypesSelected={selectedTypes.length === allTypes.length}
+          onScaleChange={handleScaleChange}
         />
       </div>
 
-      {/* 지도 */}
+      {/* ◼ Google Map */}
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={ASAN_CENTER}
@@ -106,17 +177,13 @@ export default function FarmMapPage() {
               ),
               anchor: new window.google.maps.Point(20, 40),
             }}
-            animation={farm.id === selectedId ? window.google.maps.Animation.BOUNCE : undefined}
+            animation={
+              farm.id === selectedId ? window.google.maps.Animation.BOUNCE : undefined
+            }
             onClick={() => setSelectedId(farm.id)}
             title={farm.farm_name}
           />
         ))}
-
-        <LivestockPieChartPanel
-            farms={farms}
-            isOpen={isChartOpen}
-            onToggle={toggleChart}
-        />
 
         {selectedFarm && (
           <InfoWindow
@@ -128,22 +195,10 @@ export default function FarmMapPage() {
               disableAutoPan: false,
             }}
           >
-            <div
-              className="
-                bg-white/80 backdrop-blur-md
-                border-2 border-green-300
-                rounded-xl
-                p-4
-                w-96
-                text-gray-800
-                space-y-3
-                text-sm
-                font-sans
-                text-left
-                relative
-              "
-            >
-              <h3 className="text-lg font-bold text-green-700 mb-2">{selectedFarm.farm_name}</h3>
+            <div className="bg-white/80 backdrop-blur-md border-2 border-green-300 rounded-xl p-4 w-96 text-gray-800 space-y-3 text-sm font-sans">
+              <h3 className="text-lg font-bold text-green-700 mb-2">
+                {selectedFarm.farm_name}
+              </h3>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-green-600 bg-green-100 px-4 py-2 rounded-full flex justify-center items-center min-w-[5rem]">축종</span>
                 <span className="text-gray-800 flex-grow">{selectedFarm.livestock_type}</span>
@@ -168,6 +223,15 @@ export default function FarmMapPage() {
           </InfoWindow>
         )}
       </GoogleMap>
+
+      {/* ◼ 파이 차트 패널: bottom-left */}
+      <div className="absolute bottom-2 left-4 z-20">
+        <LivestockPieChartPanel
+          farms={farms}
+          isOpen={isChartOpen}
+          onToggle={toggleChart}
+        />
+      </div>
     </div>
   );
 }
