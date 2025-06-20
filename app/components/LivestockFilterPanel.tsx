@@ -1,3 +1,4 @@
+//components/LivestockFilterPanel.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -40,10 +41,10 @@ export default function LivestockFilterPanel({
         onClick={toggleOpen}
       >
         <div className="flex items-center space-x-3">
-          <svg className="h-5 w-5 text-teal-300" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
           </svg>
-          <span className="text-white font-semibold text-sm tracking-wide">
+          <span className="text-white font-bold font-sans text-m tracking-wide">
             축종 필터링
           </span>
         </div>
@@ -56,7 +57,7 @@ export default function LivestockFilterPanel({
       {isOpen && (
         <div
           className="
-            mt-3
+            mt-2
             bg-gradient-to-br from-teal-900/10 to-blue-900/10
             backdrop-blur-md
             border-2 border-teal-300
@@ -71,10 +72,10 @@ export default function LivestockFilterPanel({
           "
         >
           <div>
-            <h3 className="text-white text-sm font-bold mb-2">🐷 축종 필터링</h3>
+            <h3 className="text-white text-m font-bold mb-2 font-sans">🐷 가축 종 선택</h3>
             <div className="space-y-1">
               <label
-                className="flex items-center space-x-2 text-white text-sm hover:bg-teal-500/20 rounded-md px-2 py-1 shadow-lg"
+                className="flex items-center space-x-2 text-m text-white font-bold  font-sans hover:bg-teal-500/20 rounded-md px-2 py-1"
               >
                 <input
                   type="checkbox"
@@ -88,7 +89,7 @@ export default function LivestockFilterPanel({
               {livestockTypes.map((type) => (
                 <label
                   key={type}
-                  className="flex items-center space-x-2 text-sm text-white hover:bg-teal-500/20 rounded-md px-2 py-1 shadow-lg"
+                  className="flex items-center space-x-2 text-m text-white font-bold font-sans hover:bg-teal-500/20 rounded-md px-2 py-1"
                 >
                   <input
                     type="checkbox"
