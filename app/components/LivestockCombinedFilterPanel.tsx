@@ -1,3 +1,4 @@
+// app/components/LivestockCombinedFilterPanel.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -26,16 +27,17 @@ export default function LivestockCombinedFilterPanel({
   allTypesSelected,
   onScaleChange,
   showOdor,
-  onToggleOdor
+  onToggleOdor,
 }: Props) {
   const groups = Object.keys(scaleRanges);
   const [activeGroup, setActiveGroup] = useState(groups[0] || '');
-  const [rangeMap, setRangeMap] = useState<Record<string, [number, number]>>(() =>
-    groups.reduce((acc, g) => {
-      const len = scaleRanges[g].length;
-      acc[g] = [0, len - 1];
-      return acc;
-    }, {} as Record<string, [number, number]>)
+  const [rangeMap, setRangeMap] = useState<Record<string, [number, number]>>(
+    () =>
+      groups.reduce((acc, g) => {
+        const len = scaleRanges[g].length;
+        acc[g] = [0, len - 1];
+        return acc;
+      }, {} as Record<string, [number, number]>)
   );
   const [isOpen, setIsOpen] = useState(false);
 
@@ -76,19 +78,31 @@ export default function LivestockCombinedFilterPanel({
     });
   };
 
-  const currentRange = rangeMap[activeGroup] || [0, scaleRanges[activeGroup]?.length - 1 || 0];
+  const currentRange =
+    rangeMap[activeGroup] ||
+    [0, scaleRanges[activeGroup]?.length - 1 || 0];
   const rs = scaleRanges[activeGroup] || [];
 
   return (
     <div className="fixed top-[70px] left-4 z-40">
       {/* 토글 버튼 */}
       <div
-        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
+        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20
+                   backdrop-blur-md border-2 border-teal-300
+                   rounded-full px-5 py-3 flex items-center justify-between
+                   cursor-pointer select-none shadow-md"
         onClick={() => setIsOpen((v) => !v)}
       >
         <div className="flex items-center space-x-2">
-          <svg className="h-4 w-4 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+          <svg
+            className="h-4 w-4 text-teal-500"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
+                     10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8
+                     s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2
+                     v2h-2z" />
           </svg>
           <span className="text-white font-bold text-m tracking-wide font-sans">
             축종 및 규모 필터
@@ -101,21 +115,20 @@ export default function LivestockCombinedFilterPanel({
 
       {isOpen && (
         <div
-          className="
-            mt-2 bg-gradient-to-br from-teal-900/10 to-blue-900/10
-            backdrop-blur-md border-2 border-teal-300
-            rounded-xl shadow-lg p-3
-            w-72 h-auto max-h-[50vh] overflow-y-auto
-            transition-all duration-300
-          "
+          className="mt-2 bg-gradient-to-br from-teal-900/10 to-blue-900/10
+                     backdrop-blur-md border-2 border-teal-300
+                     rounded-2xl shadow-lg p-6
+                     w-52 sm:w-80 max-h-[80vh] overflow-y-auto
+                     transition-all duration-300"
         >
           {/* 1) 🐷 가축 종 필터 */}
-          <div className="mb-4">
-            <h3 className="text-white text-sm font-bold mb-2 font-sans">
-              🐷 가축 종 선택
+          <div className="mb-6">
+            <h3 className="text-white text-m font-bold font-sans mb-2">
+              가축 종 선택
             </h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-              <label className="flex items-center space-x-2 text-white font-sans hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs">
+              <label className="flex items-center space-x-2 text-white font-sans
+                                 hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs">
                 <input
                   type="checkbox"
                   checked={allTypesSelected}
@@ -127,7 +140,8 @@ export default function LivestockCombinedFilterPanel({
               {livestockTypes.map((type) => (
                 <label
                   key={type}
-                  className="flex items-center space-x-2 text-white font-sans hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs"
+                  className="flex items-center space-x-2 text-white font-sans
+                             hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs"
                 >
                   <input
                     type="checkbox"
@@ -142,14 +156,16 @@ export default function LivestockCombinedFilterPanel({
           </div>
 
           {/* 2) 📏 규모 필터 + 초기화 버튼 */}
-          <div>
+          <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-white text-sm font-bold font-sans">
-                📏 축사 규모 선택
+              <h3 className="text-white text-m font-bold font-sans">
+                축사 규모 선택
               </h3>
               <button
                 onClick={resetAll}
-                className="text-xs text-teal-200 hover:text-teal-100 border border-teal-300 rounded-full px-2 py-0.5 hover:bg-teal-500/20"
+                className="text-xs text-white font-bold hover:text-white
+                           border-2 border-teal-300 rounded-full px-2 py-0.5
+                           hover:bg-teal-500/20 "
               >
                 초기화
               </button>
@@ -160,26 +176,27 @@ export default function LivestockCombinedFilterPanel({
                 <button
                   key={group}
                   onClick={() => setActiveGroup(group)}
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${activeGroup === group ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white' : 'bg-teal-900/20 text-teal-200 hover:bg-teal-900/30'}`}
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    activeGroup === group
+                      ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white'
+                      : 'bg-teal-900/20 text-teal-200 hover:bg-teal-900/30'
+                  }`}
                 >
                   {group}
                 </button>
               ))}
             </div>
             {/* 슬라이더 */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-gradient-to-r from-teal-900/20 to-blue-900/20 px-2 py-1 rounded-full">
-                <span className="text-teal-100 text-xs font-bold uppercase">
-                  {activeGroup}
-                </span>
-              </div>
+            <div className="space-y-4">
               <Slider.Root
                 className="relative flex items-center w-full h-8 select-none touch-none"
                 min={0}
                 max={rs.length - 1}
                 step={1}
                 value={currentRange}
-                onValueChange={(v) => handleChange(activeGroup, v as [number, number])}
+                onValueChange={(v) =>
+                  handleChange(activeGroup, v as [number, number])
+                }
               >
                 <Slider.Track className="bg-gray-200 relative flex-1 h-2 rounded-full">
                   <Slider.Range className="absolute bg-gradient-to-r from-teal-400 to-blue-500 h-full rounded-full transition-all duration-300" />
@@ -205,16 +222,25 @@ export default function LivestockCombinedFilterPanel({
               </div>
             </div>
           </div>
-          <div className='flex items-center space-x-2 pt-2'>
-            <input
-              id="toggle-odor"
-              type="checkbox"
-              checked={showOdor}
-              onChange={onToggleOdor}
-              className="h-4 w-4 accent-teal-500"
-            />
-            <label htmlFor='toggle-odor' className='text-sm text-gray-700'>
-              악취 범위 표시
+
+          {/* 3) 악취 범위 토글 스위치 */}
+          <div className="pt-4 border-t border-white">
+            <label className="flex items-center justify-between">
+              <span className="text-white text-m font-bold font-sans">악취 범위</span>
+              <button
+                role="switch"
+                aria-checked={showOdor}
+                onClick={onToggleOdor}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showOdor ? 'bg-teal-500' : 'bg-gray-400'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    showOdor ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </label>
           </div>
         </div>
