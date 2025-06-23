@@ -22,8 +22,8 @@ import WeatherPanel from '@/app/components/WeatherPanel';
 import { scaleRanges } from '@/app/lib/livestockScaleRanges';
 
 const containerStyle = { width: '100%', height: '100vh' };
-const ASAN_CENTER = { lat: 36.79, lng: 127.0 };
-const DEFAULT_ZOOM = 11;
+const ASAN_CENTER = { lat: 36.7855, lng: 127.102 };
+const DEFAULT_ZOOM = 13;
 
 // 축종별 아이콘 매핑
 const iconMap: Record<string, string> = {
@@ -85,6 +85,15 @@ export default function FarmMapPage() {
 
   //악취 범위 토글 상태
   const [showOdor, setShowOdor] = useState<boolean>(true);
+
+  // (1) 축종별 악취 색상 맵
+  const odorColorMap: Record<string, { stroke: string; fill: string }> = {
+    닭:   { stroke: '#FFA500', fill: '#FFA50050' },  // 오렌지
+    소:   { stroke: '#1E90FF', fill: '#1E90FF50' },  // 블루
+    돼지: { stroke: '#FF69B4', fill: '#FF69B450' },  // 핫핑크
+    사슴: { stroke: '#32CD32', fill: '#32CD4350' },  // 라임그린
+    기타: { stroke: '#A9A9A9', fill: '#A9A9A950' },  // 다크그레이
+  };
 
   // — Google Maps API 로더 (geometry 필요)
   const { isLoaded, loadError } = useJsApiLoader({
@@ -174,7 +183,7 @@ export default function FarmMapPage() {
     return visibleFarms.map((farm) => {
       const origin = new window.google.maps.LatLng(farm.lat, farm.lng);
 
-      // 기본 300m ~ 최대 3000m
+      // 기본 500m ~ 최대 5000m
       const base = 500;
       const extra = ((farm.livestock_count / maxCount) * (5000 - 500));
       let radius = base + extra;
@@ -184,7 +193,7 @@ export default function FarmMapPage() {
 
       //축종별 악취 강도 계수 적용
       const multMap: Record<string, number> ={
-        돼지: 12,
+        돼지: 15,
         '종계/산란계': 7,
         육계: 7
       };
@@ -204,7 +213,11 @@ export default function FarmMapPage() {
       }
       path.push({ lat: origin.lat(), lng: origin.lng() });
 
-      return { farmId: farm.id, path };
+      return {
+        farmId: farm.id,
+        type: farm.livestock_type,
+        path,
+      };
     });
   }, [visibleFarms, windDir, humidity, maxCount, isLoaded]);
 
@@ -262,106 +275,99 @@ export default function FarmMapPage() {
         ))}
 
         {/* 2) 악취 범위 폴리곤 */}
-        {showOdor && odorPolygons.map(({ farmId, path }) => (
-          <Polygon
-            key={farmId}
-            paths={path}
-            options={{
-              strokeColor: '#FF0000',
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: '#FF0000',
-              fillOpacity: 0.4,
-              zIndex: 1000,
-            }}
-          />
-        ))}
+        {showOdor && odorPolygons.map(({ farmId, type, path }) => {
+          // ① 축종(type) 을 '소','닭','돼지','사슴','기타' 로 분류
+          let cat = '기타';
+          if (['한우','육우','젖소'].includes(type))        cat = '소';
+          else if (type === '돼지')                         cat = '돼지';
+          else if (['종계/산란계','육계'].includes(type))   cat = '닭';
+          else if (type === '사슴')                         cat = '사슴';
+
+          // ② 해당 카테고리 색 꺼내오기
+          const { stroke, fill } = odorColorMap[cat];
+
+          return (
+            <Polygon
+              key={farmId}
+              paths={path}
+              options={{
+                strokeColor:   stroke,
+                strokeOpacity: 0.8,
+                strokeWeight:  2,
+                fillColor:     fill,
+                fillOpacity:   0.4,
+                zIndex:        1000,
+              }}
+            />
+          );
+        })}
         {/* 3) InfoWindow */}
         {selectedFarm && (
-          <InfoWindow
-            key={selectedFarm.id}
-            position={{
-              lat: selectedFarm.lat,
-              lng: selectedFarm.lng,
-            }}
-            onCloseClick={() => setSelectedId(null)}
-            options={{ pixelOffset: new window.google.maps.Size(0, -50) }}
-          >
-            <div className="bg-white/80 backdrop-blur-md border-2 border-green-300 rounded-xl p-4 w-96 text-gray-800 space-y-3 text-sm font-sans">
-              <h3 className="text-lg font-bold text-green-700 mb-2">
-                {selectedFarm.farm_name}
-              </h3>
-                {/* 축종 */}
-           <div className="flex items-center gap-2">
-             <span className="
-               font-medium text-green-600 bg-green-100
-               px-4 py-2 rounded-full
-               flex justify-center items-center min-w-[5rem]
-             ">
-               축종
-             </span>
-             <span className="text-gray-800 flex-grow">
-               {selectedFarm.livestock_type}
-             </span>
-           </div>
+  <InfoWindow
+    key={selectedFarm.id}
+    position={{
+      lat: selectedFarm.lat,
+      lng: selectedFarm.lng,
+    }}
+    onCloseClick={() => setSelectedId(null)}
+    options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
+  >
+    <div className="bg-white/80 backdrop-blur-md border-2 border-green-300 rounded-xl p-2 sm:p-4 w-full max-w-[90%] sm:max-w-[24rem] text-gray-800 space-y-2 sm:space-y-3 text-sm font-sans">
+      <h3 className="text-lg font-bold text-green-700 mb-1 sm:mb-2">
+        {selectedFarm.farm_name}
+      </h3>
+      {/* 축종 */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <span className="font-medium text-green-600 bg-green-100 px-2 sm:px-4 py-1 sm:py-2 rounded-full flex justify-center items-center sm:min-w-[5rem]">
+          축종
+        </span>
+        <span className="text-gray-800 flex-grow">
+          {selectedFarm.livestock_type}
+        </span>
+      </div>
 
-           {/* 사육두수 */}
-           <div className="flex items-center gap-2">
-             <span className="
-               font-medium text-green-600 bg-green-100
-               px-4 py-2 rounded-full
-               flex justify-center items-center min-w-[5rem]
-             ">
-               사육두수
-             </span>
-             <span className="text-gray-800 flex-grow">
-               {selectedFarm.livestock_count.toLocaleString()}두
-             </span>
-           </div>
+      {/* 사육두수 */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <span className="font-medium text-green-600 bg-green-100 px-2 sm:px-4 py-1 sm:py-2 rounded-full flex justify-center items-center sm:min-w-[5rem]">
+          사육두수
+        </span>
+        <span className="text-gray-800 flex-grow">
+          {selectedFarm.livestock_count.toLocaleString()}두
+        </span>
+      </div>
 
-           {/* 면적 */}
-           <div className="flex items-center gap-2">
-             <span className="
-               font-medium text-green-600 bg-green-100
-               px-4 py-2 rounded-full
-               flex justify-center items-center min-w-[5rem]
-             ">
-               면적
-             </span>
-             <span className="text-gray-800 flex-grow">
-               {selectedFarm.area_sqm.toLocaleString()}㎡
-             </span>
-           </div>
-           {/* 도로명 주소 */}
-           <div className="flex items-center gap-2">
-             <span className="
-               font-medium text-green-600 bg-green-100
-               px-4 py-2 rounded-full
-               flex justify-center items-center min-w-[5rem]
-             ">
-               도로명
-             </span>
-             <span className="text-gray-800 flex-grow">
-               {selectedFarm.road_address || '없음'}
-             </span>
-           </div>
+      {/* 면적 */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <span className="font-medium text-green-600 bg-green-100 px-2 sm:px-4 py-1 sm:py-2 rounded-full flex justify-center items-center sm:min-w-[5rem]">
+          면적
+        </span>
+        <span className="text-gray-800 flex-grow">
+          {selectedFarm.area_sqm.toLocaleString()}㎡
+        </span>
+      </div>
 
-           {/* 지번 주소 */}
-           <div className="flex items-center gap-2">
-             <span className="
-               font-medium text-green-600 bg-green-100
-               px-4 py-2 rounded-full
-               flex justify-center items-center min-w-[5rem]
-             ">
-               지번
-             </span>
-             <span className="text-gray-800 flex-grow">
-               {selectedFarm.land_address || '없음'}
-             </span>
-           </div>
-         </div>
-          </InfoWindow>
-        )}
+      {/* 도로명 */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <span className="font-medium text-green-600 bg-green-100 px-2 sm:px-4 py-1 sm:py-2 rounded-full flex justify-center items-center sm:min-w-[5rem]">
+          도로명
+        </span>
+        <span className="text-gray-800 flex-grow">
+          {selectedFarm.road_address || '없음'}
+        </span>
+      </div>
+
+      {/* 지번 */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <span className="font-medium text-green-600 bg-green-100 px-2 sm:px-4 py-1 sm:py-2 rounded-full flex justify-center items-center sm:min-w-[5rem]">
+          지번
+        </span>
+        <span className="text-gray-800 flex-grow">
+          {selectedFarm.land_address || '없음'}
+        </span>
+      </div>
+    </div>
+  </InfoWindow>
+)}
       </GoogleMap>
 
       {/* ◼ 날씨 패널 (우상단) */}
