@@ -14,6 +14,8 @@ interface Props {
     group: string,
     range: { min: number; max: number | null }
   ) => void;
+  showOdor: boolean;
+  onToggleOdor: () => void;
 }
 
 export default function LivestockCombinedFilterPanel({
@@ -23,6 +25,8 @@ export default function LivestockCombinedFilterPanel({
   onToggleAllTypes,
   allTypesSelected,
   onScaleChange,
+  showOdor,
+  onToggleOdor
 }: Props) {
   const groups = Object.keys(scaleRanges);
   const [activeGroup, setActiveGroup] = useState(groups[0] || '');
@@ -79,20 +83,14 @@ export default function LivestockCombinedFilterPanel({
     <div className="fixed top-[70px] left-4 z-40">
       {/* 토글 버튼 */}
       <div
-        className="
-          bg-gradient-to-r from-teal-500/20 to-blue-500/20
-          backdrop-blur-md border-2 border-teal-300
-          rounded-full px-4 py-2 flex items-center justify-between
-          cursor-pointer select-none shadow-md hover:shadow-lg
-          transition-all duration-300
-        "
+        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
         onClick={() => setIsOpen((v) => !v)}
       >
         <div className="flex items-center space-x-2">
           <svg className="h-4 w-4 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
           </svg>
-          <span className="text-white font-semibold text-xs">
+          <span className="text-white font-bold text-m tracking-wide font-sans">
             축종 및 규모 필터
           </span>
         </div>
@@ -206,6 +204,18 @@ export default function LivestockCombinedFilterPanel({
                 ))}
               </div>
             </div>
+          </div>
+          <div className='flex items-center space-x-2 pt-2'>
+            <input
+              id="toggle-odor"
+              type="checkbox"
+              checked={showOdor}
+              onChange={onToggleOdor}
+              className="h-4 w-4 accent-teal-500"
+            />
+            <label htmlFor='toggle-odor' className='text-sm text-gray-700'>
+              악취 범위 표시
+            </label>
           </div>
         </div>
       )}

@@ -83,6 +83,9 @@ export default function FarmMapPage() {
   const [isChartOpen, setChartOpen] = useState(false);
   const toggleChart = useCallback(() => setChartOpen((v) => !v), []);
 
+  //악취 범위 토글 상태
+  const [showOdor, setShowOdor] = useState<boolean>(true);
+
   // — Google Maps API 로더 (geometry 필요)
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -222,6 +225,8 @@ export default function FarmMapPage() {
           onToggleAllTypes={handleToggleAllTypes}
           allTypesSelected={selectedTypes.length === allTypes.length}
           onScaleChange={handleScaleChange}
+          showOdor={showOdor}
+          onToggleOdor={() => setShowOdor(v => !v)}
         />
       </div>
 
@@ -257,7 +262,7 @@ export default function FarmMapPage() {
         ))}
 
         {/* 2) 악취 범위 폴리곤 */}
-        {odorPolygons.map(({ farmId, path }) => (
+        {showOdor && odorPolygons.map(({ farmId, path }) => (
           <Polygon
             key={farmId}
             paths={path}
@@ -360,7 +365,7 @@ export default function FarmMapPage() {
       </GoogleMap>
 
       {/* ◼ 날씨 패널 (우상단) */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-4 right-4 z-40">
         <WeatherPanel />
       </div>
 
