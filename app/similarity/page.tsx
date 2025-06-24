@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import ForceGraph2D from '@/app/components/ForceGraphWrapper'
-import DetailPanel from '@/app/components/DetailPanel'
+import ForceGraph2D from '@/app/components/similarity/ForceGraphWrapper'
+import DetailPanel from '@/app/components/similarity/DetailPanel'
 import type { Sample } from '@/app/lib/types'
 
 

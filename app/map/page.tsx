@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Sample } from '@/app/lib/types'
-import SearchInput from '../components/SearchInput'
+import SearchInput from '../components/map/SearchInput'
 import Image from 'next/image'
 
-const Map = dynamic(() => import('../components/Map'), {
+const Map = dynamic(() => import('../components/map/Map'), {
   ssr: false,
   loading: () => <p>Loading map...</p>,
 })

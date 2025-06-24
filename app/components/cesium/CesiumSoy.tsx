@@ -19,8 +19,8 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 import { LocationInfo } from '@/app/lib/types';
 import SoybeanMarkers from './SoybeanMarker';
-import ViolinChartPanel from './ViolinChartPanel';
-import FloatingPanel from './FloatingPanel';
+import ViolinChartPanel from '../charts/ViolinChartPanel';
+import FloatingPanel from '../common/FloatingPanel';
 import { seedYieldData } from '@/app/lib/seedYieldData';
 
 // Cesium 정적 리소스 경로 설정 (public/Cesium 아래에 리소스가 있어야 함)

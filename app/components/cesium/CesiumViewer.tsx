@@ -26,7 +26,7 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 import { Microbe } from '@/app/lib/types';
 import FilterPanel from './FilterPanel';
-import PieChartPanel from './PieChartPanel';
+import PieChartPanel from '../charts/PieChartPanel';
 import { useAddPollutantMarkers } from './PollutantMarkers';
 
 
@@ -347,7 +347,7 @@ export default function CesiumViewer() {
   ]);
 
   // ─────────── 8. Soybean 엔티티 생성 (SoybeanMarkers에 위임) ───────────
-  // 이때 soybeanDataSourceRef.current가 “SoybeanMarkers”에 전달됩니다.
+  // 이때 soybeanDataSourceRef.current가 "SoybeanMarkers"에 전달됩니다.
   // SoybeanMarkers 내부에서 prod-/div-/point- 엔티티를 모두 생성합니다.
 
   // ─────────── 9. 오염 아이콘 마커 추가(한 번만) ───────────

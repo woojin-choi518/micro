@@ -5,7 +5,7 @@ import { Microbe } from '@/app/lib/types';
 
 // PieChart 컴포넌트를 동적으로 import (SSR 비활성화)
 const PieChart = dynamic(
-  () => import('@/app/components/MicrobePieChart'),
+  () => import('./MicrobePieChart'),
   { ssr: false }
 );
 

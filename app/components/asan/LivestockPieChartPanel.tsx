@@ -1,12 +1,13 @@
 'use client';
 
+import React, { useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { LivestockFarm } from '@/app/lib/types';
-import { useMemo, useCallback } from 'react';
 
 // Recharts PieChart 동적 import
-const PieChart = dynamic(() => import('@/app/components/LivestockPieChart'), {
+const PieChart = dynamic(() => import('./LivestockPieChart'), {
   ssr: false,
+  loading: () => <div className="w-full h-64 bg-gray-200 animate-pulse" />
 });
 
 interface Props {
