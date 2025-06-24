@@ -16,10 +16,10 @@ import {
 } from '@react-google-maps/api';
 import axios from 'axios';
 import type { LivestockFarm } from '@/app/lib/types';
-import LivestockCombinedFilterPanel from '@/app/components/LivestockCombinedFilterPanel';
-import LivestockPieChartPanel from '@/app/components/LivestockPieChartPanel';
-import WeatherPanel from '@/app/components/WeatherPanel';
-import { scaleRanges } from '@/app/lib/livestockScaleRanges';
+import LivestockCombinedFilterPanel from '@/app/components/asan/LivestockCombinedFilterPanel';
+import LivestockPieChartPanel from '@/app/components/asan/LivestockPieChartPanel';
+import WeatherPanel from '@/app/components/asan/WeatherPanel';
+// import { scaleRanges } from '@/app/lib/livestockScaleRanges';
 
 const containerStyle = { width: '100%', height: '100vh' };
 const ASAN_CENTER = { lat: 36.7855, lng: 127.102 };
@@ -54,7 +54,7 @@ const typeToGroup: Record<string, string> = {
 export default function FarmMapPage() {
   // — 데이터 & 필터링 상태
   const [farms, setFarms] = useState<LivestockFarm[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(["돼지","한우","젖소","육우"]);
   const [selectedScales, setSelectedScales] = useState<
     Record<string, { min: number; max: number | null }>
   >({});
@@ -64,16 +64,16 @@ export default function FarmMapPage() {
     () => Array.from(new Set(farms.map((f) => f.livestock_type))),
     [farms]
   );
-  const groupKeys = useMemo(() => Object.keys(scaleRanges), []);
-  const initialScales = useMemo(
-    () =>
-      groupKeys.reduce((acc, g) => {
-        const r = scaleRanges[g];
-        acc[g] = { min: r[0].min, max: r[r.length - 1].max };
-        return acc;
-      }, {} as Record<string, { min: number; max: number | null }>),
-    [groupKeys]
-  );
+  // const groupKeys = useMemo(() => Object.keys(scaleRanges), []);
+  // const initialScales = useMemo(
+  //   () =>
+  //     groupKeys.reduce((acc, g) => {
+  //       const r = scaleRanges[g];
+  //       acc[g] = { min: r[0].min, max: r[r.length - 1].max };
+  //       return acc;
+  //     }, {} as Record<string, { min: number; max: number | null }>),
+  //   [groupKeys]
+  // );
 
   // — 날씨 상태
   const [windDir, setWindDir] = useState<number>(0);
@@ -117,7 +117,7 @@ export default function FarmMapPage() {
 
   // — 날씨 데이터 로드
   useEffect(() => {
-    (async () => {
+    const fetchWeather = async () => {
       try {
         const apiKey = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
         const lat = 36.7998, lon = 127.1375;
@@ -128,16 +128,20 @@ export default function FarmMapPage() {
       } catch (e) {
         console.error('Weather API error', e);
       }
-    })();
+    };
+
+    fetchWeather();
+    const iv =setInterval(fetchWeather, 300_000);
+    return () => clearInterval(iv);
   }, []);
 
-  // — 필터 초기화
-  useEffect(() => {
-    setSelectedTypes(allTypes);
-  }, [allTypes]);
-  useEffect(() => {
-    setSelectedScales(initialScales);
-  }, [initialScales]);
+  // // — 필터 초기화
+  // useEffect(() => {
+  //   setSelectedTypes(allTypes);
+  // }, [allTypes]);
+  // useEffect(() => {
+  //   setSelectedScales(initialScales);
+  // }, [initialScales]);
 
   // — 필터 토글 핸들러
   const handleToggleType = useCallback((t: string) => {

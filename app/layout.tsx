@@ -4,8 +4,8 @@ import React from 'react'
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
-import Header from './components/Header'
-import GoogleMapsProvider from '@/app/components/GoogleMapsProvider';
+import Header from './components/common/Header'
+import GoogleMapsProvider from '@/app/components/providers/GoogleMapsProvider';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',

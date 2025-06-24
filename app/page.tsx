@@ -6,7 +6,7 @@ import type { ISourceOptions } from 'tsparticles-engine'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import Skeleton from './components/Skeleton'
+import Skeleton from './components/common/Skeleton'
 import { Sample } from '@/app/lib/types'
 import Image from 'next/image'
 import { Moon, Sun } from 'lucide-react'
@@ -47,7 +47,7 @@ const features = [
   },
 ]
 
-const SimpleMap = dynamic(() => import('./components/SimpleMap'), { ssr: false })
+const SimpleMap = dynamic(() => import('./components/home/SimpleMap'), { ssr: false })
 
 export default function IntroPage() {
   const [samples, setSamples] = useState<Sample[]>([])
