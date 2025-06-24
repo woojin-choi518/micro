@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import { Sample, ASVCount } from '@/app/lib/types'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import SampleDetailPanel from './SampleDetailPanel'
-import ASVViewer from './ASVViewer'
+import ASVViewer from '../asv/ASVViewer'
 import Select from 'react-select'
 
 // 마커 아이콘
