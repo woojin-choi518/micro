@@ -61,7 +61,7 @@ const odorColorMap: Record<string, { stroke: string }> = {
 export default function FarmMapPage() {
   // 데이터 & 필터링
   const [farms, setFarms] = useState<LivestockFarm[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(["한우","돼지","젖소","육우"]);
   const [selectedScales, setSelectedScales] = useState<Record<string, { min: number; max: number | null }>>({});
   const [selectedId, setSelectedId] = useState<number|null>(null);
 
@@ -122,7 +122,7 @@ export default function FarmMapPage() {
   }, []);
 
   // 축종 필터 핸들러
-  useEffect(() => { setSelectedTypes(allTypes); }, [allTypes]);
+  //useEffect(() => { setSelectedTypes(allTypes); }, [allTypes]);
   const handleToggleType = useCallback((t: string) => {
     setSelectedTypes(prev =>
       prev.includes(t) ? prev.filter(x => x!==t) : [...prev, t]
