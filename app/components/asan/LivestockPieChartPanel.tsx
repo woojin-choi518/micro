@@ -44,7 +44,7 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
     <div className="fixed bottom-6 left-4 right-4 sm:right-auto z-30 ">
       {/* 🔘 토글 헤더 */}
       <div
-        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
+        className="bg-gradient-to-r from-teal-800/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
         onClick={handleToggle}
       >
         <div className="flex items-center space-x-2 ">
@@ -66,7 +66,7 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
         <div
           className="
             mt-2
-            bg-gradient-to-br from-teal-900/10 to-blue-900/10
+            bg-gradient-to-br from-teal-800/20 to-blue-500/20
             backdrop-blur-md
             border-2 border-teal-300
             rounded-2xl
@@ -77,7 +77,7 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
             overflow-y-auto
           "
         >
-            <span className='text-gray-600 text-sm font-bold font-sans'>데이터 수정일 : 2025-06-02</span>
+            <span className='text-white text-sm font-bold font-sans'>데이터 수정일 : 2025-06-02</span>
             <PieChart data={chartData} />
         </div>
       )}

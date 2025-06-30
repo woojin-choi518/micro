@@ -18,6 +18,8 @@ import LivestockCombinedFilterPanel from '@/app/components/asan/LivestockCombine
 import LivestockPieChartPanel from '@/app/components/asan/LivestockPieChartPanel';
 import WeatherPanel from '@/app/components/asan/WeatherPanel';
 import SectorOverlay from '@/app/components/asan/SectorOverlay';
+import CircleOverlay from '@/app/components/asan/CircleOverlay';
+
 
 const containerStyle = { width: '100%', height: '100vh' };
 const ASAN_CENTER = { lat: 36.7855, lng: 127.102 };
@@ -55,7 +57,7 @@ const odorColorMap: Record<string, { stroke: string }> = {
   소:   { stroke: '#1E90FF' },  // 블루
   돼지: { stroke: '#FF69B4' },  // 핫핑크
   사슴: { stroke: '#32CD32' },  // 라임그린
-  기타: { stroke: '#A9A9A9' },  // 다크그레이
+  기타: { stroke: '#8884FF' },  // 다크그레이
 };
 
 export default function FarmMapPage() {
@@ -87,6 +89,9 @@ export default function FarmMapPage() {
     libraries: ['geometry'],
   });
 
+  // **시나리오 선택**: 'worst', 'average', 'best'
+  const [scenario, setScenario] = useState<'worst'|'average'|'best'>('average');
+
   // 농가 데이터 fetch
   useEffect(() => {
     fetch('/api/asan-farm')
@@ -102,6 +107,8 @@ export default function FarmMapPage() {
   }, []);
 
   // 날씨 데이터 fetch
+  const [windSpeed, setWindSpeed] = useState(1); // 기본값 1m/s
+
   useEffect(() => {
     const fetchWeather = async () => {
       try {
@@ -112,6 +119,7 @@ export default function FarmMapPage() {
         const { data } = await axios.get(url);
         setWindDir(data.wind.deg ?? 0);
         setHumidity(data.main.humidity ?? 50);
+        setWindSpeed(data.wind.speed ?? 1);
       } catch(e) {
         console.error('Weather API error', e);
       }
@@ -162,43 +170,92 @@ export default function FarmMapPage() {
     [farms]
   );
 
-  // Fan-shape 생성 정보
-  const odorFans = useMemo(() => {
+  // 시나리오별 파라미터 오버라이드
+  const { scWindSpeed, scHumidity, scStability } = useMemo(() => {
+    switch(scenario) {
+      case 'worst':
+        return { scWindSpeed: 1.0, scHumidity: 98, scStability: 'stable'  };
+      case 'best':
+        return { scWindSpeed: 3.6, scHumidity: 0,  scStability: 'unstable'};
+      case 'average':
+      default:
+        return { scWindSpeed: windSpeed, scHumidity: humidity, scStability: 'neutral' };
+    }
+  }, [scenario, windSpeed, humidity]);
+
+   // odorFans: 시나리오별 파라미터 적용
+   const odorFans = useMemo(() => {
     if (!map) return [];
     const halfAngle = 30;
+    const baseRadius = 500;
+    const maxRadius  = 5000;
+    const typeMultiplier: Record<string, number> = {
+      돼지: 1.5, 육계: 0.7, '종계/산란계': 0.7,
+      소: 1.0, 사슴: 0.8,
+    };
+
     return visibleFarms.map(farm => {
       const center = { lat: farm.lat, lng: farm.lng };
-      const base = 500;
-      const extra = (farm.livestock_count / maxCount) * (5000 - 500);
-      let r = (base + extra) * (humidity/100);
-      const mul: Record<string, number> = {
-        돼지: 15, '종계/산란계': 7, 육계: 7
-      };
-      r *= mul[farm.livestock_type]||1;
+      const livestockMul = typeMultiplier[farm.livestock_type] || 1;
+      const extraRadius   = (farm.livestock_count / maxCount) * (maxRadius - baseRadius);
 
-      // 바람이 가는 방향 (풍향 + 180°)
-      const targetDir = (windDir) % 360;
+      // **시나리오 풍속·습도·안정도** 사용
+      let r = (baseRadius + extraRadius) * livestockMul;
+      // 풍속 보정
+      if (scWindSpeed <= 0.5)      r *= 1.5;
+      else if (scWindSpeed >= 1.5) r *= 0.7;
+      // 안정도 보정
+      r *= scStability === 'stable'   ? 1.4
+         : scStability === 'unstable' ? 0.8
+         : 1.0;
+      // 습도 보정 (0~30% 선형)
+      r *= 1 + (scHumidity/100)*0.3;
+
+      // 풍향
+      const targetDir = windDir % 360;
       const startA = (targetDir - halfAngle + 360) % 360;
-      const endA = (targetDir + halfAngle + 360) % 360;
+      const endA   = (targetDir + halfAngle + 360) % 360;
 
-      return {
-        farmId: farm.id,
-        type: farm.livestock_type,
-        center,
-        radius: r,
-        startA,
-        endA,
-      };
+      return { farmId: farm.id, type: farm.livestock_type, center, radius: r, startA, endA };
     });
-  }, [visibleFarms, windDir, humidity, maxCount, map]);
+  }, [visibleFarms, windDir, scWindSpeed, scHumidity, scStability, maxCount, map]);
+
 
   const selectedFarm = farms.find(f=>f.id===selectedId)||null;
 
-  if (loadError) return <div>지도 로딩 실패</div>;
-  if (!isLoaded) return <div>지도 로딩 중…</div>;
+  if (loadError) return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-red-500 text-center">
+        지도 로딩 실패
+        <button
+          onClick={() => window.location.reload()}
+          className="ml-2 bg-blue-500 text-white px-2 py-1 rounded"
+        >
+          재시도
+        </button>
+      </div>
+    </div>
+  );
+  if (!isLoaded) return <div className="flex items-center justify-center h-screen">지도 로딩 중…</div>;
 
   return (
     <div className="relative">
+      {/* … 기존 필터 패널 위에 시나리오 선택 UI를 추가 */}
+      <div className="fixed bottom-6 right-4 z-50 bg-gradient-to-r from-teal-800/20 to-blue-500/20
+                   backdrop-blur-md border-2 border-teal-300
+                   rounded-full px-5 py-3 flex items-center justify-between
+                   cursor-pointer select-none shadow-md">
+        <label className="mr-2 font-semibold text-white-700">시뮬레이션 시나리오:</label>
+        <select
+          value={scenario}
+          onChange={e => setScenario(e.target.value as any)}
+          className="bg-white/80 border border-gray-300 rounded-md px-3 py-1 text-gray-800 font-sans text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-colors duration-200"
+        >
+          <option value="worst">악취 강함 (역전층·무풍·높은 습도)</option>
+          <option value="average">실시간</option>
+          <option value="best">악취 약함 (불안정·강풍·낮은 습도)</option>
+        </select>
+      </div>
       <div className="absolute top-4 left-4 z-20">
         <LivestockCombinedFilterPanel
           livestockTypes={allTypes}
@@ -245,15 +302,25 @@ export default function FarmMapPage() {
           else if (f.type==='사슴') cat='사슴';
           const { stroke } = odorColorMap[cat];
           return (
-            <SectorOverlay
-              key={f.farmId}
-              map={map}
-              center={f.center}
-              radius={f.radius}
-              startAngle={f.startA}
-              endAngle={f.endA}
-              color={stroke}
-            />
+            <React.Fragment key={f.farmId}>
+              {/* 1) 주변 풀 서클: 반경 그대로 */}
+              <CircleOverlay
+                map={map}
+                center={f.center}
+                radius={f.radius * 0.6}
+                color={stroke}
+              />
+        
+              {/* 2) 방향성 플럼: 기존 섹터 */}
+              <SectorOverlay
+                map={map}
+                center={f.center}
+                radius={f.radius * 0.8}
+                startAngle={f.startA}
+                endAngle={f.endA}
+                color={stroke}
+              />
+            </React.Fragment>
           );
         })}
 
