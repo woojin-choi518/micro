@@ -10,9 +10,9 @@ import {
 import type { ProtectedTree } from '@/app/lib/types';
 
 const containerStyle = { width: '100%', height: '100vh' };
-const GONGJU_CENTER = { lat: 36.5, lng: 127.06 };
+const ASAN_CENTER = { lat: 36.81, lng: 126.98 };
 const DEFAULT_ZOOM = 11;
-const GONGJU_RADIUS = 17000;
+const ASAN_RADIUS = 15000;
 
 export default function TreeMapPage() {
   const [trees, setTrees] = useState<ProtectedTree[]>([]);
@@ -60,14 +60,14 @@ export default function TreeMapPage() {
     <>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={GONGJU_CENTER}
+        center={ASAN_CENTER}
         zoom={DEFAULT_ZOOM}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {/* 4) 공주시를 예쁜 원으로 강조 */}
         <Circle
-          center={GONGJU_CENTER}
-          radius={GONGJU_RADIUS} // 15km 반경
+          center={ASAN_CENTER}
+          radius={ASAN_RADIUS} // 15km 반경
           options={{
             fillColor: 'rgba(235, 200, 135, 0.4)', // 부드러운 하늘색 채우기
             fillOpacity: 0.4,

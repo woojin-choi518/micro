@@ -62,7 +62,10 @@ const WeatherPanel = () => {
   return (
     <div className="fixed top-[70px] right-4 z-40">
       <div
-        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
+        className="bg-gradient-to-r from-teal-800/20 to-blue-500/20
+                   backdrop-blur-md border-2 border-teal-300
+                   rounded-full px-5 py-3 flex items-center justify-between
+                   cursor-pointer select-none shadow-md"
         onClick={handleToggle}
       >
         <div className="flex items-center space-x-2">
@@ -78,11 +81,10 @@ const WeatherPanel = () => {
         <div
           className="
             mt-2
-            bg-gradient-to-br from-teal-900/10 to-blue-900/10
-            backdrop-blur-md
-            border-2 border-teal-300
+            bg-gradient-to-r from-teal-800/20 to-blue-500/20
+            backdrop-blur-md border-2 border-teal-300
             rounded-2xl
-            shadow-lg
+            shadow-,d
             px-4 py-4
             w-[170px] sm:w-[200px]
             max-h-[60vh]

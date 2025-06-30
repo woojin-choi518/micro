@@ -14,8 +14,8 @@ export interface ScaleRange {
       { label: '특대', min: 10000, max: null },
     ],
     돼지: [
-      { label: '소', min: 0, max: 1000 },
-      { label: '중', min: 1000, max: 5000 },
+      { label: '소', min: 0, max: 2000 },
+      { label: '중', min: 2000, max: 5000 },
       { label: '대', min: 5000, max: 10000 },
       { label: '특대', min: 10000, max: null },
     ],
