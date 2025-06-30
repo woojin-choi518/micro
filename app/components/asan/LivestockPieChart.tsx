@@ -60,7 +60,7 @@ export default function LivestockPieChart({
                 <text
                   x={x}
                   y={y}
-                  fill="#333"
+                  fill="#fff"
                   textAnchor={x > cx ? 'start' : 'end'}
                   dominantBaseline="central"
                   fontFamily="Pretendard"
@@ -85,7 +85,7 @@ export default function LivestockPieChart({
           <Tooltip
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: '8px',
+              borderRadius: '12px',
               border: '1px solid #45B7D1',
             }}
             itemStyle={{ color: '#333' }}

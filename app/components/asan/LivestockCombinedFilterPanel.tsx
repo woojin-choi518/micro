@@ -87,7 +87,7 @@ export default function LivestockCombinedFilterPanel({
     <div className="fixed top-[70px] left-4 z-40">
       {/* 토글 버튼 */}
       <div
-        className="bg-gradient-to-r from-teal-500/20 to-blue-500/20
+        className="bg-gradient-to-r from-teal-800/20 to-blue-500/20
                    backdrop-blur-md border-2 border-teal-300
                    rounded-full px-5 py-3 flex items-center justify-between
                    cursor-pointer select-none shadow-md"
@@ -115,7 +115,7 @@ export default function LivestockCombinedFilterPanel({
 
       {isOpen && (
         <div
-          className="mt-2 bg-gradient-to-br from-teal-900/10 to-blue-900/10
+          className="mt-2 bg-gradient-to-br from-teal-800/20 to-blue-500/20
                      backdrop-blur-md border-2 border-teal-300
                      rounded-2xl shadow-lg p-6
                      w-52 sm:w-80 max-h-[80vh] overflow-y-auto
@@ -128,7 +128,7 @@ export default function LivestockCombinedFilterPanel({
             </h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               <label className="flex items-center space-x-2 text-white font-sans
-                                 hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs">
+                                 hover:bg-teal-800/20 rounded-full px-2 py-0.5 text-xs">
                 <input
                   type="checkbox"
                   checked={allTypesSelected}
@@ -141,7 +141,7 @@ export default function LivestockCombinedFilterPanel({
                 <label
                   key={type}
                   className="flex items-center space-x-2 text-white font-sans
-                             hover:bg-teal-500/20 rounded-full px-2 py-0.5 text-xs"
+                             hover:bg-teal-800/20 rounded-full px-2 py-0.5 text-xs"
                 >
                   <input
                     type="checkbox"
@@ -163,8 +163,8 @@ export default function LivestockCombinedFilterPanel({
               </h3>
               <button
                 onClick={resetAll}
-                className="text-xs text-white font-bold hover:text-white
-                           border-2 border-teal-300 rounded-full px-2 py-0.5
+                className="text-xs text-white font-semibold hover:text-white
+                           border-2 border-teal-300 rounded-full p-1.5
                            hover:bg-teal-500/20 "
               >
                 초기화
