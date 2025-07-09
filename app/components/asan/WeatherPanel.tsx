@@ -1,127 +1,224 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
-const WeatherPanel = () => {
-  const [weather, setWeather] = useState<any>(null);
+interface WeatherPanelProps {
+  onForecastSelect?: (hourData: any) => void;
+  selIndex: number;                          // 추가
+  onSelIndexChange: (i: number) => void;     // 추가
+  scWindSpeed: number;
+  scHumidity: number;
+}
+
+const WeatherPanel: React.FC<WeatherPanelProps> = ({
+  onForecastSelect,
+  scWindSpeed,
+  scHumidity,
+  selIndex,
+  onSelIndexChange
+}) => {
+  const [current, setCurrent] = useState<any>(null);
+  const [forecastList, setForecastList] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  // 안내 문구
+  const guidance = useMemo(() => {
+    if (scWindSpeed <= 1.0) return '바람이 약해 악취가 넓게 퍼질 수 있습니다.';
+    if (scWindSpeed >= 2.0) return '바람이 강해 악취가 빠르게 분산됩니다.';
+    if (scHumidity >= 70) return '습도가 높아 악취가 오래 머물 수 있습니다.';
+    if (scHumidity <= 30) return '습도가 낮아 악취 확산이 제한될 수 있습니다.';
+    return '현재 조건에서 악취 확산은 보통 수준입니다.';
+  }, [scWindSpeed, scHumidity]);
+
+  // 1️⃣ 마운트 시: 5일·3시간 forecast 한 번 불러오기
+  useEffect(() => {
+    const fetchForecast = async () => {
+      try {
+        const key = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY!;
+        const lat = 36.7998, lon = 127.1375;
+        const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${key}&units=metric`;
+        const res = await axios.get(url);
+        setForecastList(res.data.list);
+      } catch (e: any) {
+        console.error('fetchForecast error', e);
+      }
+    };
+    fetchForecast();
+  }, [onForecastSelect]);
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
-      if (!apiKey) {
-        setError('API 키가 설정되지 않았습니다. .env 파일을 확인하세요.');
-        setLoading(false);
-        console.error('API 키가 없습니다. .env에 NEXT_PUBLIC_OPENWEATHERMAP_API_KEY를 추가하세요.');
-        return;
-      }
+    if (selIndex > 0 && forecastList[selIndex]) {
+      onForecastSelect?.(forecastList[selIndex]);
+    }
+  }, [selIndex, forecastList, onForecastSelect]);
 
-      const lat = 36.7998; // 아산 위도
-      const lon = 127.1375;  // 아산 경도
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+  // 2️⃣ selIndex === 0 일 때만 5분마다 current 날씨 갱신
+  useEffect(() => {
+    let iv: NodeJS.Timeout;
 
-      setLoading(true);
+    const fetchCurrent = async () => {
       try {
-        const response = await axios.get(url, { timeout: 5000 }); // 5초 타임아웃
-        const data = response.data;
-        console.log('API 응답 상세:', data); // 상세 로그
-        setWeather(data);
-        setError(null);
+        setLoading(true);
+        const key = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY!;
+        const lat = 36.7998, lon = 127.1375;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric`;
+        const res = await axios.get(url);
+        setCurrent(res.data);
         setLastUpdated(new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.message || err.message || '알 수 없는 오류';
-        setError(`오류: ${errorMessage}`);
-        console.error('API 호출 오류:', err.response?.status, err.response?.data || err.message);
+        // 실시간 모드일 때만 forecastList[0]도 갱신
+        if (selIndex === 0 && forecastList[0]) {
+          onForecastSelect?.(forecastList[0]);
+        }
+        setError(null);
+      } catch (e: any) {
+        console.error('fetchCurrent error', e);
+        setError(e.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWeather();
-    const interval = setInterval(fetchWeather, 300000); // 5분 간격 갱신
-    return () => clearInterval(interval);
-  }, []);
+    if (selIndex === 0) {
+      fetchCurrent();
+      iv = setInterval(fetchCurrent, 300_000);
+    }
 
-  if (loading) return <div className="text-white text-xs">Loading...</div>;
-  if (error) return <div className="text-white text-xs">{error}</div>;
+    return () => {
+      if (iv) clearInterval(iv);
+    };
+  }, [selIndex, forecastList, onForecastSelect]);
 
-  const windDirection = weather?.wind?.deg || 0;
-  const windSpeed = weather?.wind?.speed || 0;
-  const rain = weather?.rain?.['1h'] || 0;
-  const temp = weather?.main?.temp || 0;
-  const humidity = weather?.main?.humidity || 0;
+  // 3️⃣ selIndex > 0 이면 해당 예보만 부모에 전달
+  useEffect(() => {
+    if (selIndex > 0 && forecastList[selIndex]) {
+      onForecastSelect?.(forecastList[selIndex]);
+    }
+  }, [selIndex, forecastList, onForecastSelect]);
 
-  const handleToggle = () => {
-    setIsOpen((prev) => !prev);
-  };
+  if (loading) return <div className="text-white text-xs">Loading…</div>;
+  if (error) return <div className="text-white text-xs">Error: {error}</div>;
+
+  // 화면에 표시할 데이터
+  const T = current.main.temp;
+  const H = current.main.humidity;
+  const Wsp = current.wind.speed;
+  const Wdir = current.wind.deg;
+  const rain = current.rain?.['1h'] ?? 0;
+  const selFc = forecastList[selIndex];
 
   return (
     <div className="fixed top-[70px] right-4 z-40">
+      {/* 🔘 토글 헤더 */}
       <div
-        className="bg-gradient-to-r from-teal-800/20 to-blue-500/20
-                   backdrop-blur-md border-2 border-teal-300
-                   rounded-full px-5 py-3 flex items-center justify-between
-                   cursor-pointer select-none shadow-md"
-        onClick={handleToggle}
+        onClick={() => setIsOpen(o => !o)}
+        className="
+          bg-gradient-to-r from-teal-800/20 to-blue-500/20
+          backdrop-blur-md border-2 border-teal-300
+          rounded-full px-5 py-2 flex items-center justify-between
+          cursor-pointer select-none shadow-md
+        "
       >
-        <div className="flex items-center space-x-2">
-          <svg className="h-5 w-5 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-          </svg>
-          <span className="text-white font-bold text-lg tracking-wide font-sans">현재 날씨</span>
-        </div>
-        <span className="text-white text-xl leading-none">{isOpen ? '▾' : '▸'}</span>
+        <span className="text-white font-bold text-lg">날씨 정보</span>
+        <span className="text-white text-xl">{isOpen ? '▾' : '▸'}</span>
       </div>
 
       {isOpen && (
         <div
           className="
-            mt-2
-            bg-gradient-to-r from-teal-800/20 to-blue-500/20
-            backdrop-blur-md border-2 border-teal-300
-            rounded-2xl
-            shadow-,d
-            px-4 py-4
-            w-[170px] sm:w-[200px]
-            max-h-[60vh]
-            overflow-y-auto
+            mt-2 bg-gradient-to-br from-teal-800/20 to-blue-500/20
+            backdrop-blur-md border-2 border-teal-300 rounded-2xl shadow-lg
+            px-4 py-4 w-[200px] max-h-[80vh] overflow-y-auto
           "
         >
-          <div className="text-center">
-            <span className="text-white text-sm font-semibold font-sans">마지막 업데이트</span>
-            <br />
-            <span className="text-white text-sm font-semibold font-sans">{lastUpdated}</span>
+          {/* 마지막 업데이트 */}
+          <div className="text-center mb-4">
+            <span className="text-white text-sm font-semibold">마지막 업데이트</span><br/>
+            <span className="text-white text-sm font-semibold">{lastUpdated}</span>
           </div>
-          <div className="grid grid-cols-1 gap-3 mt-3">
-            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm font-medium text-center">
-              온도: {temp}°C
+
+          {/* 실시간 요약 */}
+          <div className="space-y-2 mb-4">
+            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+              온도: {T}°C
             </div>
-            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm font-medium text-center">
-              습도: {humidity}%
+            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+              습도: {H}%
             </div>
-            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm font-medium flex items-center justify-center">
-              바람 방향: 
+            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm flex items-center justify-center">
+              바람 방향:
               <svg
-                className="w-4 h-4 ml-1"
-                style={{ transform: `rotate(${windDirection}deg)` }}
+                className="w-4 h-4 mx-1"
+                style={{ transform: `rotate(${Wdir}deg)` }}
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path d="M12 2l8 10h-6v8h-4v-8H4l8-10z" />
               </svg>
-              ({windDirection}°)
+              ({Wdir}°)
             </div>
-            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm font-medium text-center">
-              바람 속도: {windSpeed} m/s
+            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+              바람 속도: {Wsp} m/s
             </div>
-            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm font-medium text-center">
+            <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
               강수량: {rain} mm
             </div>
           </div>
+
+          {/* 예보 상세 */}
+          {selFc && (
+            <div className="space-y-2 mb-4">
+              <div className="text-white text-sm font-semibold">예보: {selIndex * 3}시간 후</div>
+              <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+                {new Date(selFc.dt * 1000).toLocaleString('ko-KR')}
+              </div>
+              <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+                온도: {selFc.main.temp}°C
+              </div>
+              <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+                습도: {selFc.main.humidity}%
+              </div>
+                 <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm flex items-center justify-center">
+                바람 방향:
+                <svg
+                  className="w-4 h-4 mx-1"
+                  style={{ transform: `rotate(${selFc.wind.deg}deg)` }}
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2l8 10h-6v8h-4v-8H4l8-10z" />
+                </svg>
+                ({selFc.wind.deg}°)
+              </div>
+              <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 p-2 rounded-full text-white text-sm text-center">
+                바람 속도: {selFc.wind.speed} m/s
+              </div>
+            </div>
+          )}
+
+          {/* 안내 문구 */}
+          <div className="text-white text-m font-sans font-bold mb-3 p-2 text-red-400 border-2 rounded-xl border-red-400">
+            {guidance}
+          </div>
+
+          {/* 슬라이더 */}
+          {forecastList.length > 0 && (
+            <div>
+              <div className="text-white text-sm mb-1">예보 선택: {selIndex * 3}시간 후</div>
+              <input
+                type="range"
+                min={0}
+                max={forecastList.length - 1}
+                step={1}
+                value={selIndex}
+                onChange={e => onSelIndexChange(+e.target.value)}
+                className="w-full accent-teal-400"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

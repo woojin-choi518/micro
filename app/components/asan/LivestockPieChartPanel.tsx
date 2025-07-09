@@ -41,10 +41,15 @@ export default function LivestockPieChartPanel({ farms, isOpen, onToggle }: Prop
   }, [onToggle]);
 
   return (
-    <div className="fixed bottom-6 left-4 right-4 sm:right-auto z-30 ">
+    <div className="bottom-6 left-4 right-4 sm:right-auto z-30 ">
       {/* 🔘 토글 헤더 */}
       <div
-        className="bg-gradient-to-r from-teal-800/20 to-blue-500/20 backdrop-blur-md border-2 border-teal-300 rounded-full px-5 py-3 flex items-center justify-between cursor-pointer select-none shadow-md"
+        className="
+        bg-gradient-to-r from-teal-800/20 to-blue-500/20
+        backdrop-blur-md border-2 border-teal-300
+        rounded-full px-5 py-3 flex items-center justify-between
+        cursor-pointer select-none shadow-md
+        "
         onClick={handleToggle}
       >
         <div className="flex items-center space-x-2 ">
