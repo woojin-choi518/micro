@@ -13,13 +13,13 @@ import {
   useJsApiLoader,
 } from '@react-google-maps/api';
 import axios from 'axios';
+import { useMediaQuery } from 'react-responsive';
 import type { LivestockFarm } from '@/app/lib/types';
 import LivestockCombinedFilterPanel from '@/app/components/asan/LivestockCombinedFilterPanel';
 import LivestockPieChartPanel from '@/app/components/asan/LivestockPieChartPanel';
 import WeatherPanel from '@/app/components/asan/WeatherPanel';
 import SectorOverlay from '@/app/components/asan/SectorOverlay';
 import CircleOverlay from '@/app/components/asan/CircleOverlay';
-
 
 const containerStyle = { width: '100%', height: '100vh' };
 const ASAN_CENTER = { lat: 36.7855, lng: 127.102 };
@@ -60,7 +60,14 @@ const odorColorMap: Record<string, { stroke: string }> = {
   기타: { stroke: '#8884FF' },  // 다크그레이
 };
 
+// 모바일 여부 확인 (768px 이하를 모바일로 간주)
+const MARKER_SIZE = {
+  desktop: { default: 40, selected: 50 },
+  mobile: { default: 24, selected: 30 },
+};
+
 export default function FarmMapPage() {
+  const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
   // 데이터 & 필터링
   const [farms, setFarms] = useState<LivestockFarm[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["한우","돼지","젖소","육우"]);
@@ -75,6 +82,10 @@ export default function FarmMapPage() {
   // 날씨 상태
   const [windDir, setWindDir] = useState(0);
   const [humidity, setHumidity] = useState(50);
+  const [fcWindSpeed, setFcWindSpeed] = useState<number>(1);
+  const [fcHumidity,  setFcHumidity]  = useState<number>(50);
+  const [fcWindDir, setFcWindDir] = useState<number>(0);
+  const [selFcIndex, setSelFcIndex] = useState<number>(0);
 
   // 차트, 필터, 맵 레퍼런스
   const [isChartOpen, setChartOpen] = useState(false);
@@ -130,7 +141,6 @@ export default function FarmMapPage() {
   }, []);
 
   // 축종 필터 핸들러
-  //useEffect(() => { setSelectedTypes(allTypes); }, [allTypes]);
   const handleToggleType = useCallback((t: string) => {
     setSelectedTypes(prev =>
       prev.includes(t) ? prev.filter(x => x!==t) : [...prev, t]
@@ -170,28 +180,47 @@ export default function FarmMapPage() {
     [farms]
   );
 
-  // 시나리오별 파라미터 오버라이드
-  const { scWindSpeed, scHumidity, scStability } = useMemo(() => {
-    switch(scenario) {
-      case 'worst':
-        return { scWindSpeed: 1.0, scHumidity: 98, scStability: 'stable'  };
-      case 'best':
-        return { scWindSpeed: 3.6, scHumidity: 0,  scStability: 'unstable'};
-      case 'average':
-      default:
-        return { scWindSpeed: windSpeed, scHumidity: humidity, scStability: 'neutral' };
+  const {
+    scWindSpeed,
+    scHumidity,
+    scStability,
+    scWindDir,
+  } = useMemo(() => {
+    if (scenario === 'worst') {
+      return { scWindSpeed: 1, scHumidity: 98, scStability: 'stable',   scWindDir: windDir };
     }
-  }, [scenario, windSpeed, humidity]);
+    if (scenario === 'best') {
+      return { scWindSpeed: 3.6, scHumidity: 0, scStability: 'unstable', scWindDir: windDir };
+    }
+    // = average 모드 (실시간+슬라이더)
+    if (selFcIndex > 0) {
+      // 슬라이더가 1이상: 예보 모드
+      return {
+        scWindSpeed: fcWindSpeed,
+        scHumidity:  fcHumidity,
+        scStability: 'neutral',
+        scWindDir:   fcWindDir,
+      };
+    } else {
+      // selFcIndex === 0: 실시간 모드
+      return {
+        scWindSpeed: windSpeed,
+        scHumidity:  humidity,
+        scStability: 'neutral',
+        scWindDir:   windDir,
+      };
+    }
+  }, [scenario, windDir, windSpeed, humidity, selFcIndex, fcWindSpeed, fcHumidity, fcWindDir]);
 
-   // odorFans: 시나리오별 파라미터 적용
-   const odorFans = useMemo(() => {
+  // odorFans: 시나리오별 파라미터 적용
+  const odorFans = useMemo(() => {
     if (!map) return [];
     const halfAngle = 30;
     const baseRadius = 500;
     const maxRadius  = 5000;
     const typeMultiplier: Record<string, number> = {
-      돼지: 1.5, 육계: 0.7, '종계/산란계': 0.7,
-      소: 1.0, 사슴: 0.8,
+      돼지: 3.0, 육계: 1.4, '종계/산란계': 1.4,
+      소: 2.0, 사슴: 1.0,
     };
 
     return visibleFarms.map(farm => {
@@ -212,7 +241,7 @@ export default function FarmMapPage() {
       r *= 1 + (scHumidity/100)*0.3;
 
       // 풍향
-      const targetDir = windDir % 360;
+      const targetDir = scWindDir % 360;
       const startA = (targetDir - halfAngle + 360) % 360;
       const endA   = (targetDir + halfAngle + 360) % 360;
 
@@ -220,8 +249,13 @@ export default function FarmMapPage() {
     });
   }, [visibleFarms, windDir, scWindSpeed, scHumidity, scStability, maxCount, map]);
 
-
   const selectedFarm = farms.find(f=>f.id===selectedId)||null;
+
+  const handleForecastSelect = useCallback((h: any) => {
+      setFcWindSpeed(h.wind.speed);
+      setFcHumidity(h.main.humidity);
+      setFcWindDir(h.wind.deg);
+      }, []);
 
   if (loadError) return (
     <div className="flex items-center justify-center h-screen">
@@ -239,36 +273,33 @@ export default function FarmMapPage() {
   if (!isLoaded) return <div className="flex items-center justify-center h-screen">지도 로딩 중…</div>;
 
   return (
-    <div className="relative">
-      {/* … 기존 필터 패널 위에 시나리오 선택 UI를 추가 */}
-      <div className="fixed bottom-6 right-4 z-50 bg-gradient-to-r from-teal-800/20 to-blue-500/20
-                   backdrop-blur-md border-2 border-teal-300
-                   rounded-full px-5 py-3 flex items-center justify-between
-                   cursor-pointer select-none shadow-md">
-        <label className="mr-2 font-semibold text-white-700">시뮬레이션 시나리오:</label>
-        <select
-          value={scenario}
-          onChange={e => setScenario(e.target.value as any)}
-          className="bg-white/80 border border-gray-300 rounded-md px-3 py-1 text-gray-800 font-sans text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-colors duration-200"
-        >
-          <option value="worst">악취 강함 (역전층·무풍·높은 습도)</option>
-          <option value="average">실시간</option>
-          <option value="best">악취 약함 (불안정·강풍·낮은 습도)</option>
-        </select>
-      </div>
-      <div className="absolute top-4 left-4 z-20">
+    <div className="relative h-screen">
+      {/* 상단 좌측 필터 */}
+      <div className="fixed top-4 left-4 z-40">
         <LivestockCombinedFilterPanel
           livestockTypes={allTypes}
           selectedTypes={selectedTypes}
           onToggleType={handleToggleType}
           onToggleAllTypes={handleToggleAll}
-          allTypesSelected={selectedTypes.length===allTypes.length}
+          allTypesSelected={selectedTypes.length === allTypes.length}
           onScaleChange={handleScaleChange}
           showOdor={showOdor}
-          onToggleOdor={() => setShowOdor(v=>!v)}
+          onToggleOdor={() => setShowOdor(v => !v)}
         />
       </div>
-
+  
+      {/* 상단 우측 날씨 */}
+      <div className="fixed top-4 right-4 z-40">
+        <WeatherPanel 
+          onForecastSelect={handleForecastSelect} 
+          scWindSpeed={scWindSpeed}
+          scHumidity={scHumidity}
+          onSelIndexChange={setSelFcIndex}
+          selIndex={selFcIndex} 
+        />
+      </div>
+  
+      {/* 구글 맵 */}
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={ASAN_CENTER}
@@ -276,42 +307,46 @@ export default function FarmMapPage() {
         options={{ disableDefaultUI: true, zoomControl: true }}
         onLoad={m => setMap(m)}
       >
-        {visibleFarms.map(farm=>(
+        {visibleFarms.map(farm => (
           <Marker
             key={farm.id}
             position={{ lat: farm.lat, lng: farm.lng }}
             icon={{
-              url: iconMap[farm.livestock_type]||'/images/default.png',
+              url: iconMap[farm.livestock_type] || '/images/default.png',
               scaledSize: new window.google.maps.Size(
-                farm.id===selectedId?50:40,
-                farm.id===selectedId?50:40
+                farm.id === selectedId
+                  ? (isMobile ? MARKER_SIZE.mobile.selected : MARKER_SIZE.desktop.selected)
+                  : (isMobile ? MARKER_SIZE.mobile.default : MARKER_SIZE.desktop.default),
+                farm.id === selectedId
+                  ? (isMobile ? MARKER_SIZE.mobile.selected : MARKER_SIZE.desktop.selected)
+                  : (isMobile ? MARKER_SIZE.mobile.default : MARKER_SIZE.desktop.default)
               ),
-              anchor: new window.google.maps.Point(20,40),
+              anchor: new window.google.maps.Point(
+                ((isMobile ? MARKER_SIZE.mobile.default : MARKER_SIZE.desktop.default) / 2),
+                (isMobile ? MARKER_SIZE.mobile.default : MARKER_SIZE.desktop.default)
+              ),
             }}
-            onClick={()=>setSelectedId(farm.id)}
+            onClick={() => setSelectedId(farm.id)}
             title={farm.farm_name}
             zIndex={1}
           />
         ))}
-
-        {showOdor && map && odorFans.map(f=>{
-          let cat='기타';
-          if (['한우','육우','젖소'].includes(f.type)) cat='소';
-          else if (f.type==='돼지') cat='돼지';
-          else if (['종계/산란계','육계'].includes(f.type)) cat='닭';
-          else if (f.type==='사슴') cat='사슴';
+  
+        {showOdor && map && odorFans.map(f => {
+          let cat = '기타';
+          if (['한우','육우','젖소'].includes(f.type)) cat = '소';
+          else if (f.type === '돼지') cat = '돼지';
+          else if (['종계/산란계','육계'].includes(f.type)) cat = '닭';
+          else if (f.type === '사슴') cat = '사슴';
           const { stroke } = odorColorMap[cat];
           return (
             <React.Fragment key={f.farmId}>
-              {/* 1) 주변 풀 서클: 반경 그대로 */}
               <CircleOverlay
                 map={map}
                 center={f.center}
                 radius={f.radius * 0.6}
                 color={stroke}
               />
-        
-              {/* 2) 방향성 플럼: 기존 섹터 */}
               <SectorOverlay
                 map={map}
                 center={f.center}
@@ -323,17 +358,21 @@ export default function FarmMapPage() {
             </React.Fragment>
           );
         })}
-
+  
         {selectedFarm && (
           <InfoWindow
             position={{ lat: selectedFarm.lat, lng: selectedFarm.lng }}
-            onCloseClick={()=>setSelectedId(null)}
+            onCloseClick={() => setSelectedId(null)}
             options={{ pixelOffset: new window.google.maps.Size(0,-30) }}
           >
-            <div className="bg-white/80 backdrop-blur-md border-2 border-green-300 rounded-xl p-4 w-80 text-gray-800 space-y-3 text-sm">
-              <h3 className="text-lg font-bold text-green-700">
-                {selectedFarm.farm_name}
-              </h3>
+            <div className="bg-white/80 backdrop-blur-md border-2 border-green-300 rounded-xl p-4
+            w-full
+            max-w-[90vw]
+            sm:max-w-[20rem]
+            text-gray-800 space-y-3 text-sm
+            break-words
+            ">
+              <h3 className="text-lg font-bold text-green-700">{selectedFarm.farm_name}</h3>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-green-600 bg-green-100 px-4 py-2 rounded-full min-w-[5rem] text-center">축종</span>
                 <span>{selectedFarm.livestock_type}</span>
@@ -358,18 +397,50 @@ export default function FarmMapPage() {
           </InfoWindow>
         )}
       </GoogleMap>
-
-      <div className="absolute top-4 right-4 z-40">
-        <WeatherPanel/>
-      </div>
-
-      <div className="absolute bottom-2 left-4 z-20">
-        <LivestockPieChartPanel
-          farms={farms}
-          isOpen={isChartOpen}
-          onToggle={toggleChart}
-        />
+  
+      {/* 하단 공통 컨테이너: Pie 차트 + 시나리오 선택 */}
+      <div
+        className="
+          fixed bottom-4 left-4 right-4 z-50
+          flex flex-col space-y-3
+          sm:flex-row sm:space-y-0 sm:justify-between sm:space-x-4
+        "
+      >
+        {/* Pie 차트 패널 */}
+        <div className="w-full sm:w-auto">
+          <LivestockPieChartPanel
+            farms={farms}
+            isOpen={isChartOpen}
+            onToggle={toggleChart}
+          />
+        </div>
+  
+        {/* 시나리오 드롭다운 */}
+        <div className="w-full sm:w-auto flex self-end justify-end">
+          <div className="
+            bg-gradient-to-r from-teal-800/20 to-blue-500/20
+            backdrop-blur-md border-2 border-teal-300
+            rounded-full px-5 py-3 flex items-center justify-between
+            cursor-pointer select-none shadow-md
+            w-full sm:w-auto
+          ">
+            <label className="mr-2 font-semibold text-white">시나리오:</label>
+            <select
+              value={scenario}
+              onChange={e => setScenario(e.target.value as any)}
+              className="
+                bg-white/80 border border-gray-300 rounded-md
+                px-3 py-1 text-gray-800 font-sans text-sm md:text-base
+                focus:outline-none focus:ring-2 focus:ring-teal-400
+              "
+            >
+              <option value="worst">악취 강함 (역전층·무풍·높은 습도)</option>
+              <option value="average">실시간</option>
+              <option value="best">악취 약함 (불안정·강풍·낮은 습도)</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
-  );
+  );  
 }
