@@ -1,4 +1,3 @@
-// components/CesiumViewer.tsx
 'use client';
 
 import {
@@ -18,9 +17,9 @@ import {
   Cartesian3,
   LabelStyle,
   VerticalOrigin,
-  CallbackProperty,
-  ConstantProperty,
   Color,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 
@@ -29,8 +28,6 @@ import FilterPanel from './FilterPanel';
 import PieChartPanel from '../charts/PieChartPanel';
 import { useAddPollutantMarkers } from './PollutantMarkers';
 
-
-// Cesium 정적 리소스 경로 설정 (public/Cesium 아래에 리소스가 있어야 함)
 declare global {
   interface Window {
     CESIUM_BASE_URL: string;
@@ -39,37 +36,24 @@ declare global {
 (window as Window).CESIUM_BASE_URL = '/Cesium';
 
 export default function CesiumViewer() {
-  // ─────────── 1. Refs & State 선언 ───────────
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerInstance = useRef<Viewer | null>(null);
-
-  // Microbe 전용 DataSource
   const microbeDataSourceRef = useRef<CustomDataSource | null>(null);
- 
-
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [microbes, setMicrobes] = useState<Microbe[]>([]);
-
   const [error, setError] = useState<string | null>(null);
   const [isViewerInitialized, setIsViewerInitialized] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Microbe[] | null>(null);
-
-  // 연도 필터 & 애니메이션 관련 상태
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [uniqueYears, setUniqueYears] = useState<number[]>([]);
   const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  // organism / sequence 필터
   const [organismFilter, setOrganismFilter] = useState<string>('');
   const [sequenceFilter, setSequenceFilter] = useState<string>('');
-
-  // 패널 열림/닫힘 상태
   const [isYearPanelOpen, setIsYearPanelOpen] = useState<boolean>(false);
   const [isPieChartOpen, setIsPieChartOpen] = useState<boolean>(true);
 
-  // 드롭다운용 고유 organism 목록
   const uniqueOrganisms = useMemo(
     () =>
       Array.from(
@@ -78,19 +62,16 @@ export default function CesiumViewer() {
     [microbes]
   );
 
-  // ─────────── 2. uniqueYears 계산 & 컬러맵 생성 ───────────
   useEffect(() => {
     const years = Array.from(
       new Set(microbes.map((m) => m.year).filter((y): y is number => y != null))
     ).sort();
     setUniqueYears(years);
-
-    // 첫 로딩 시 currentYear, selectedYears 기본값 설정
     if (years.length > 0 && currentYear === null) {
       setCurrentYear(years[0]);
       setSelectedYears(years);
     }
-  }, [microbes]);
+  }, [microbes, currentYear]);
 
   const yearColorMap = useMemo(() => {
     const map: Record<number, Color> = {};
@@ -102,9 +83,8 @@ export default function CesiumViewer() {
     return map;
   }, [uniqueYears]);
 
-  // ─────────── 3. Microbe 데이터 Fetch ───────────
   useLayoutEffect(() => {
-    fetch('/api/microbes?startYear=2010&endYear=2015')
+    fetch('/api/microbes')
       .then((res) => res.json())
       .then((data: Microbe[]) => setMicrobes(data))
       .catch((err) => {
@@ -113,15 +93,12 @@ export default function CesiumViewer() {
       });
   }, []);
 
-
-  // ─────────── 5. currentYear 변경 시 selectedYears 덮어쓰기 (애니메이션 모드) ───────────
   useEffect(() => {
     if (isPlaying && currentYear !== null) {
       setSelectedYears([currentYear]);
     }
   }, [currentYear, isPlaying]);
 
-  // ─────────── 6. Cesium Viewer 초기화 ───────────
   useLayoutEffect(() => {
     if (viewerInstance.current) return;
     if (!viewerRef.current) {
@@ -140,6 +117,7 @@ export default function CesiumViewer() {
       animation: false,
       timeline: false,
       baseLayerPicker: false,
+      selectionIndicator: false,
     });
     viewerInstance.current = viewer;
 
@@ -208,7 +186,6 @@ export default function CesiumViewer() {
         }
         if (!isMounted) return;
 
-        // (A) Microbe 전용 DataSource 생성
         const mds = new CustomDataSource('microbes');
         mds.clustering.enabled = false;
         microbeDataSourceRef.current = mds;
@@ -236,8 +213,7 @@ export default function CesiumViewer() {
     };
   }, []);
 
-  // ─────────── 7. Microbe 엔티티 생성 ───────────
-  const handleSelectGroup = useCallback((group: Microbe[]) => {
+  const handleSelectGroup = useCallback((group: Microbe[] | null) => {
     setSelectedGroup(group);
   }, []);
 
@@ -246,10 +222,8 @@ export default function CesiumViewer() {
     const mds = microbeDataSourceRef.current!;
     if (!mds) return;
 
-    // (1) 기존 Microbe 엔티티만 삭제
     mds.entities.removeAll();
 
-    // (2) Microbe 그룹핑 로직
     const grouped: Record<string, Microbe[]> = {};
     microbes.forEach((m) => {
       const passYear = selectedYears.includes(m.year!);
@@ -276,32 +250,39 @@ export default function CesiumViewer() {
       }
     });
 
-    // (3) 그룹별로 Microbe 엔티티 추가
+    const escapeHtml = (str: string) => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+
     Object.entries(grouped).forEach(([key, group]) => {
       const [lat, lon] = key.split(',').map(parseFloat);
       const cesiumColor = yearColorMap[group[0].year!] || Color.GRAY;
 
-      // InfoBox 콘텐츠 조합
       const html = group
         .map((g) => {
           const seqText =
             g.sequence === null || g.sequence === undefined
               ? 'N/A'
-              : g.sequence;
+              : escapeHtml(g.sequence);
           const displayDate = g.collection_date
             ? g.collection_date!.split('T')[0]
             : 'N/A';
 
           return `
-            <strong style="color:#fff380;">${g.organism}</strong><br/>
+            <strong style="color:#fff380;">${escapeHtml(g.organism)}</strong><br/>
             <span style="color:#cccccc;">NCBI ID:</span> 
-              <span style="color:#ffffff;">${g.ncbi_id}</span><br/>
+            <span style="color:#ffffff;">${escapeHtml(g.ncbi_id)}</span><br/>
             <span style="color:#cccccc;">Collection Date:</span> 
-              <span style="color:#ffffff;">${displayDate || 'N/A'}</span><br/>
+            <span style="color:#ffffff;">${displayDate || 'N/A'}</span><br/>
             <span style="color:#cccccc;">Year:</span> 
-              <span style="color:#ffffff;">${g.year || 'Unknown'}</span><br/>
+            <span style="color:#ffffff;">${g.year || 'Unknown'}</span><br/>
             <span style="color:#cccccc;">Sequence:</span> 
-              <span style="color:#ffffff; word-break: break-all;">${seqText}</span><br/>
+            <span style="color:#ffffff; word-break: break-all;">${seqText}</span><br/>
             <hr style="border-color: #555555;" />
           `;
         })
@@ -327,14 +308,14 @@ export default function CesiumViewer() {
           pixelOffset: new Cartesian3(0, -15),
         },
         name: 'microbes',
-        description: new CallbackProperty(() => {
-          handleSelectGroup(group);
-          return new ConstantProperty(`
-            <div style="background-color: rgba(32, 34, 37, 0.95); padding: 10px; color: #ffffff; max-height: 300px; font-size: 16px;">
-              ${html}
-            </div>
-          `);
-        }, false),
+        properties: {
+          group: group,
+        },
+        description: `
+          <div style="background-color: rgba(32, 34, 37, 0.95); padding: 10px; color: #ffffff; max-height: 300px; font-size: 16px; user-select: text; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text;">
+            ${html}
+          </div>
+        `,
       });
     });
   }, [
@@ -346,15 +327,65 @@ export default function CesiumViewer() {
     isViewerInitialized,
   ]);
 
-  // ─────────── 8. Soybean 엔티티 생성 (SoybeanMarkers에 위임) ───────────
-  // 이때 soybeanDataSourceRef.current가 "SoybeanMarkers"에 전달됩니다.
-  // SoybeanMarkers 내부에서 prod-/div-/point- 엔티티를 모두 생성합니다.
+  useEffect(() => {
+    if (!isViewerInitialized || !viewerInstance.current) return;
+    const viewer = viewerInstance.current;
+    const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
 
-  // ─────────── 9. 오염 아이콘 마커 추가(한 번만) ───────────
+    handler.setInputAction((evt: any) => {
+      const pick = viewer.scene.pick(evt.position);
+      if (pick?.id?.name === 'microbes') {
+        viewer.selectedEntity = pick.id;
+        handleSelectGroup(pick.id.properties.group.getValue());
+      } else {
+        viewer.selectedEntity = undefined;
+        handleSelectGroup(null);
+      }
+    }, ScreenSpaceEventType.LEFT_CLICK);
+
+    return () => {
+      handler.destroy();
+    };
+  }, [isViewerInitialized, handleSelectGroup]);
+
+  useEffect(() => {
+    if (!isViewerInitialized || !viewerInstance.current) return;
+
+    const applyTextSelect = () => {
+      const iframe = document.querySelector('.cesium-infoBox iframe') as HTMLIFrameElement;
+      if (iframe?.contentDocument) {
+        const style = iframe.contentDocument.createElement('style');
+        style.textContent = `
+          * {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            pointer-events: auto !important;
+          }
+        `;
+        iframe.contentDocument.head.appendChild(style);
+        iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-forms allow-scripts allow-pointer-lock');
+      }
+    };
+
+    const observer = new MutationObserver(() => {
+      applyTextSelect();
+    });
+    observer.observe(document.querySelector('.cesium-infoBox') || document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    applyTextSelect();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isViewerInitialized]);
+
   useAddPollutantMarkers(viewerInstance.current, isViewerInitialized);
-  
 
-  // ─────────── 11. 체크박스 토글 함수 ───────────
   const toggleYear = useCallback(
     (year: number) => {
       if (isPlaying) {
@@ -367,7 +398,6 @@ export default function CesiumViewer() {
     [isPlaying]
   );
 
-  // ─────────── 12. 전체 선택 토글 ───────────
   const toggleSelectAll = useCallback(() => {
     if (isPlaying) {
       setIsPlaying(false);
@@ -379,7 +409,6 @@ export default function CesiumViewer() {
     }
   }, [isPlaying, selectedYears, uniqueYears]);
 
-  // ─────────── 13. Play/Pause 버튼 핸들러 ───────────
   const onClickPlayPause = useCallback(() => {
     if (!isPlaying) {
       if (currentYear === null && uniqueYears.length > 0) {
@@ -392,7 +421,6 @@ export default function CesiumViewer() {
     }
   }, [isPlaying, uniqueYears, currentYear]);
 
-  // ─────────── 14. 애니메이션 setInterval 관리 ───────────
   useEffect(() => {
     if (!isPlaying) {
       if (playIntervalRef.current) {
@@ -421,21 +449,17 @@ export default function CesiumViewer() {
     };
   }, [isPlaying, uniqueYears]);
 
-  // ─────────── 15. UI 렌더링 ───────────
   const minYear = uniqueYears.length > 0 ? uniqueYears[0] : 0;
   const maxYear =
     uniqueYears.length > 0 ? uniqueYears[uniqueYears.length - 1] : 0;
 
   return (
     <>
-      {/* 0) 에러 표시 */}
       {error && (
         <div className="absolute top-4 left-4 z-50 bg-red-500 text-white p-2 rounded shadow">
           {error}
         </div>
       )}
-
-      {/* 1) FilterPanel */}
       <FilterPanel
         uniqueYears={uniqueYears}
         selectedYears={selectedYears}
@@ -455,8 +479,6 @@ export default function CesiumViewer() {
         isOpen={isYearPanelOpen}
         onToggleOpen={() => setIsYearPanelOpen((prev) => !prev)}
       />
-
-      {/* 2) Cesium Viewer 컨테이너 */}
       <div
         ref={viewerRef}
         style={{
@@ -468,8 +490,6 @@ export default function CesiumViewer() {
           overflow: 'visible',
         }}
       />
-
-      {/* 4) PieChartPanel (selectedGroup이 있을 때만 렌더링) */}
       {selectedGroup && (
         <PieChartPanel
           data={selectedGroup}
@@ -481,7 +501,6 @@ export default function CesiumViewer() {
           onToggleOpen={() => setIsPieChartOpen((prev) => !prev)}
         />
       )}
-
     </>
   );
 }
