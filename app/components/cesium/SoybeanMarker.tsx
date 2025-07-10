@@ -138,12 +138,11 @@ export default function SoybeanMarkers({
         name: `${city} (${location})`,
         description: `
           <div style="
-            background-color: rgba(32, 34, 37, 0.95);
+            background-color: rgba(32, 34, 37, 0.00);
             padding: 8px;
             color: #ffffff;
             font-size: 14px;
             line-height: 1.4;
-            border-radius: 4px;
           ">
             <h3 style="margin-top:0; font-size:20px; color:#fff380;">
               지역 : ${city} (${location})

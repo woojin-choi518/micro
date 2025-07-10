@@ -89,7 +89,7 @@ export default function LivestockCombinedFilterPanel({
       <div
         className="bg-gradient-to-r from-teal-800/20 to-blue-500/20
                    backdrop-blur-md border-2 border-teal-300
-                   rounded-full px-5 py-3 flex items-center justify-between
+                   rounded-full px-5 py-2 flex items-center justify-between
                    cursor-pointer select-none shadow-md"
         onClick={() => setIsOpen((v) => !v)}
       >
@@ -124,7 +124,7 @@ export default function LivestockCombinedFilterPanel({
           {/* 1) 🐷 가축 종 필터 */}
           <div className="mb-6">
             <h3 className="text-white text-m font-bold font-sans mb-2">
-              가축 종 선택
+              가축 선택
             </h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               <label className="flex items-center space-x-2 text-white font-sans
@@ -159,7 +159,7 @@ export default function LivestockCombinedFilterPanel({
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-white text-m font-bold font-sans">
-                축사 규모 선택
+                축사 규모
               </h3>
               <button
                 onClick={resetAll}
