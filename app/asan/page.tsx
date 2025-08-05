@@ -62,7 +62,7 @@ const odorColorMap: Record<string, { stroke: string }> = {
 
 // 모바일 여부 확인 (768px 이하를 모바일로 간주)
 const MARKER_SIZE = {
-  desktop: { default: 40, selected: 50 },
+  desktop: { default: 30, selected: 36 },
   mobile: { default: 24, selected: 30 },
 };
 

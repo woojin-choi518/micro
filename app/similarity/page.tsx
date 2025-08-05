@@ -6,8 +6,6 @@ import ForceGraph2D from '@/app/components/similarity/ForceGraphWrapper'
 import DetailPanel from '@/app/components/similarity/DetailPanel'
 import type { Sample } from '@/app/lib/types'
 
-
-
 interface Node {
   id: string
   biome: string
@@ -30,7 +28,6 @@ export default function SimilarityPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
 
-  // 1) 샘플 메타데이터 로드
   useEffect(() => {
     fetch('/samples.json')
       .then(r => r.json())
@@ -38,7 +35,6 @@ export default function SimilarityPage() {
       .catch(console.error)
   }, [])
 
-  // 2) Biome 변경 시: 선택 초기화 + 그래프 데이터 패치치
   useEffect(() => {
     setSelectedNode(null)     
     setLoading(true)
@@ -70,20 +66,23 @@ export default function SimilarityPage() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   return (
-    <main className="min-h-screen p-6 bg-gradient-to-br from-green-50 to-white">
+    <main className="min-h-screen p-6 bg-gradient-to-br from-gray-50 to-white">
       <motion.div
-        className="mb-6 p-6 bg-green-100 rounded-xl shadow text-center"
+        className="mb-6 p-6 bg-gray-800 bg-opacity-70 rounded-xl shadow-lg text-center backdrop-blur-sm"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-4xl font-extrabold text-green-700">Sample Similarity</h1>
+        <h1 className="text-4xl font-extrabold text-white">Sample Similarity</h1>
       </motion.div>
 
-      {/* Biome 선택 */}
       <div className="mb-6 flex items-center gap-4">
-        <label className="text-green-700 font-medium">Biome 선택:</label>
+        <label className="text-gray-700 font-medium">Biome 선택:</label>
         <select
-          className="border border-green-300 rounded px-3 py-2 bg-white text-green-800"
+          className="
+            flex-1 min-w-0
+            w-full sm:w-auto
+            border border-gray-300 rounded px-3 py-2
+            bg-white text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={biome}
           onChange={e => setBiome(e.target.value)}
         >
@@ -94,10 +93,9 @@ export default function SimilarityPage() {
         </select>
       </div>
 
-      {/* Force-Graph */}
       <div
         ref={containerRef}
-        className="relative h-[600px] bg-white rounded-lg shadow border overflow-hidden"
+        className="relative h-[600px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
       >
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -116,63 +114,49 @@ export default function SimilarityPage() {
         )}
         {hasData && (
           <ForceGraph2D
-          graphData={graphData}
-          width={containerRef.current?.clientWidth ?? 800}
-          height={600}
-        
-          //노드에 라벨 표시
-          nodeCanvasObject={(node, ctx, globalScale) => {
-            const size = 6
-            const n = node as any
-            // 1) 원
-            ctx.beginPath()
-            ctx.arc(n.x, n.y, size, 0, 2 * Math.PI, false)
-            ctx.fillStyle = n.color
-            ctx.fill()
-        
-            // 2) 라벨
-            const label = n.id
-            const fontSize = 12 / globalScale
-            ctx.font = `${fontSize}px Sans-Serif`
-            ctx.textAlign = 'center'
-            ctx.textBaseline = 'top'
-            ctx.fillStyle = '#222'
-            ctx.fillText(label, n.x, n.y + size + 2)
-          }}
-        
-          // Link width
-          linkWidth={link => {
-            const v = (link as any).value
-            return v > 0 ? Math.min(v, 10) : 1
-          }}
-        
-          // count
-          linkCanvasObjectMode={() => 'after'}
-          linkCanvasObject={(link, ctx) => {
-            const l = link as any
-            const { x: x1, y: y1 } = l.source as any
-            const { x: x2, y: y2 } = l.target as any
-            const mx = (x1 + x2) / 2
-            const my = (y1 + y2) / 2
-        
-            ctx.font = `8px Sans-Serif`
-            ctx.textAlign = 'center'
-            ctx.textBaseline = 'middle'
-            ctx.fillStyle = '#555'
-            ctx.fillText(String(l.value), mx, my)
-          }}
-        
-          // 컬러링, 파티클 등
-          nodeAutoColorBy="biome"
-          linkDirectionalParticles={2}
-          linkDirectionalParticleSpeed={0.005}
-          linkDirectionalParticleWidth={1.5}
-        
-          // 마우스 오버 / 클릭릭
-          nodeLabel={node => `${(node as any).id}\nbiome: ${(node as any).biome}`}
-          linkLabel={link => `Shared count: ${(link as any).value}`}
-          onNodeClick={node => setSelectedNode(node as any)}
-        />
+            graphData={graphData}
+            width={containerRef.current?.clientWidth ?? 800}
+            height={600}
+            nodeCanvasObject={(node, ctx, globalScale) => {
+              const size = 6
+              const n = node as any
+              ctx.beginPath()
+              ctx.arc(n.x, n.y, size, 0, 2 * Math.PI, false)
+              ctx.fillStyle = n.color
+              ctx.fill()
+              const label = n.id
+              const fontSize = 12 / globalScale
+              ctx.font = `${fontSize}px Sans-Serif`
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'top'
+              ctx.fillStyle = '#222'
+              ctx.fillText(label, n.x, n.y + size + 2)
+            }}
+            linkWidth={link => {
+              const v = (link as any).value
+              return v > 0 ? Math.min(v, 10) : 1
+            }}
+            linkCanvasObjectMode={() => 'after'}
+            linkCanvasObject={(link, ctx) => {
+              const l = link as any
+              const { x: x1, y: y1 } = l.source as any
+              const { x: x2, y: y2 } = l.target as any
+              const mx = (x1 + x2) / 2
+              const my = (y1 + y2) / 2
+              ctx.font = `8px Sans-Serif`
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              ctx.fillStyle = '#555'
+              ctx.fillText(String(l.value), mx, my)
+            }}
+            nodeAutoColorBy="biome"
+            linkDirectionalParticles={2}
+            linkDirectionalParticleSpeed={0.005}
+            linkDirectionalParticleWidth={1.5}
+            nodeLabel={node => `${(node as any).id}\nbiome: ${(node as any).biome}`}
+            linkLabel={link => `Shared count: ${(link as any).value}`}
+            onNodeClick={node => setSelectedNode(node as any)}
+          />
         )}
       </div>
 
@@ -182,4 +166,3 @@ export default function SimilarityPage() {
     </main>
   )
 }
-
