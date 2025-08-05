@@ -95,18 +95,31 @@ export default function DetailPanel({ selectedNode, links }: DetailPanelProps) {
           return (
             <div key={nb} className="mb-4 p-4 border rounded bg-gray-50">
               <p className="mb-1 text-gray-800">
-                <strong>Neighbor:</strong> {nb}
+                <strong>Neighbor:</strong>{' '}
+                <span className="break-all whitespace-normal">{nb}</span>
               </p>
               <p className="mb-2 text-gray-800">
                 <strong>Count:</strong> {edge.value}
               </p>
 
               {sharedMap[nb]?.length ? (
-                <ul className="list-disc list-inside max-h-40 overflow-y-auto text-sm text-gray-800">
+                <ol className="max-h-40 overflow-y-auto text-sm text-gray-800">
                   {sharedMap[nb].map((seq, i) => (
-                    <li key={i} className="break-words my-0.5">{seq}</li>
+                    <li key={i} className="flex items-center mb-1">
+                      {/* 번호 */}
+                      <span className="flex-none w-6 text-right pr-2 font-medium">
+                        {i+1}.
+                      </span>
+                    
+                      {/* 코드 블록 */}
+                      <pre className="flex-1 font-mono text-[12px] leading-snug
+                                      overflow-x-auto whitespace-pre
+                                      bg-gray-100 p-2 rounded">
+                        {seq}
+                      </pre>
+                    </li>
                   ))}
-                </ul>
+                </ol>
               ) : (
                 <p className="text-sm text-gray-500">
                   No shared ASV sequences.

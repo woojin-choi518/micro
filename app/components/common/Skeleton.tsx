@@ -1,25 +1,19 @@
-'use client'
+'use client';
 
-import { motion } from 'framer-motion'
-import clsx from 'clsx'
+interface SkeletonProps {
+  darkMode: boolean;
+}
 
-export default function Skeleton({ darkMode }: { darkMode: boolean }) {
+export default function Skeleton({ darkMode }: SkeletonProps) {
   return (
-    <motion.div
-      className={clsx(
-        'min-h-screen flex items-center justify-center bg-gradient-to-br',
-        darkMode ? 'from-gray-900 to-gray-800' : 'from-green-50 to-white'
-      )}
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 0 }}
-      transition={{ delay: 0.5, duration: 0.5 }}
-    >
-      <div className="space-y-4 w-full max-w-3xl p-6">
-        <div className="h-10 bg-green-100 dark:bg-gray-700 rounded shimmer" />
-        <div className="h-6 bg-green-100 dark:bg-gray-700 rounded shimmer" />
-        <div className="h-6 bg-green-100 dark:bg-gray-700 rounded shimmer w-1/2" />
-        <div className="h-[400px] bg-green-100 dark:bg-gray-700 rounded-lg shimmer mt-8" />
+    <div className={darkMode ? 'dark' : ''}>
+      <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="animate-pulse space-y-4 w-3/4 max-w-lg">
+          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6" />
+        </div>
       </div>
-    </motion.div>
-  )
+    </div>
+  );
 }
