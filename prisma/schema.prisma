@@ -148,3 +148,41 @@ model LivestockFarm {
   latitude         Float?
   longitude        Float?
 }
+
+model Strain {
+  id                      Int     @id @default(autoincrement())
+  strain_no              String  @unique
+  scientific_name        String?
+  catalogue_no           String?
+
+  kingdom                String?
+  phylum                 String?
+  class                  String?
+  order                  String?
+  family                 String?
+  genus                  String?
+
+  locality               String?
+  latitude               Float?
+  longitude              Float?
+  elevation              Float?
+  depth                  Float?
+
+  sampling_site          String?
+  environment            String?
+  temperature_c          Float?
+  ph                    Float?
+  salinity_ppt           Float?
+  habitat                String?
+  host                   String?
+
+  culture_media          String?
+  culture_temperature_c  Float?
+  culture_ph             Float?
+  culture_aeration       String?
+  culture_other_condition String?
+
+  products               String?
+  biohazard              String?
+  other_characteristics  String?
+}
