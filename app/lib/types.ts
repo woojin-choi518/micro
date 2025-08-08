@@ -45,7 +45,7 @@ export interface Microbe {
   original_date: string | null;
   collection_date: string | null;
   year: number | null;
-  sequence: string;
+  sequence?: string;
   createdAt?: string | null; 
 }
 
