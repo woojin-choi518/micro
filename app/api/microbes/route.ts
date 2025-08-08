@@ -33,7 +33,6 @@ export async function GET(request: Request) {
         latitude: true,
         longitude: true,
         collection_date: true,
-        sequence: true,
         year: true,
       },
     });

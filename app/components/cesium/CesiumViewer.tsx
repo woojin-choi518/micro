@@ -1,4 +1,3 @@
-// app/components/cesium/CesiumViewer.tsx
 'use client';
 
 import {
@@ -80,6 +79,51 @@ function buildStrainGroupHtml(grp: any[]) {
   return html;
 }
 
+// ─── Microbe Group HTML Builder with Sequence Loading ─────────────────────────
+function buildMicrobeGroupHtml(grp: Microbe[], sequences: Record<string, string | null>) {
+  let html = '<div style="background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); color: #000; font-family: Arial, sans-serif; max-height: 300px; overflow-y: auto;">';
+  html += '<h2 style="margin: 0 0 12px; font-size: 1.2rem; border-bottom: 2px solid #0000FF; padding-bottom: 4px; color: #000;">Microbe Group (Total: ' + grp.length + ')</h2>';
+
+  const categories = {
+    'General': ['organism', 'ncbi_id', 'year'],
+    'Sequence': ['sequence'],
+  };
+
+  grp.forEach((microbe: Microbe, index) => {
+    html += '<h3 style="margin: 8px 0; font-size: 1rem; color: #000; border-bottom: 1px solid #ddd;">Microbe #' + (index + 1) + '</h3>';
+    Object.entries(categories).forEach(([category, keys]) => {
+      const categoryData = Object.fromEntries(
+        Object.entries(microbe).filter(([k]) => keys.includes(k))
+      );
+      if (category === 'Sequence') {
+        categoryData.sequence = sequences[microbe.id] ?? 'Loading...'; // microbe.id는 string
+      }
+      if (Object.keys(categoryData).length > 0) {
+        if (category) {
+          html += '<h4 style="margin: 4px 0; font-size: 0.9rem; color: #000; border-bottom: 1px solid #0000FF;">- ' + category + '</h4>';
+        }
+        html += '<table style="width: 100%; border-collapse: collapse; background: #f9f9f9; margin-bottom: 8px;">';
+        Object.entries(categoryData).forEach(([k, v]) => {
+          html += `
+            <tr style="border-bottom: 1px solid #eee;">
+              <th style="text-align: left; padding: 6px; background: #e0e0e0; width: 40%; font-weight: 600; color: #000;">
+                ${k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              </th>
+              <td style="padding: 6px; color: #000;">
+                ${v ?? '-'}
+              </td>
+            </tr>`;
+        });
+        html += '</table>';
+      }
+    });
+    if (index < grp.length - 1) html += '<hr style="border: 0.5px solid #eee; margin: 8px 0;">';
+  });
+
+  html += '</div>';
+  return html;
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function CesiumViewer() {
   const viewerRef     = useRef<HTMLDivElement>(null);
@@ -89,6 +133,7 @@ export default function CesiumViewer() {
   const playInterval  = useRef<NodeJS.Timeout|null>(null);
 
   const [microbes, setMicrobes] = useState<Microbe[]>([]);
+  const [sequences, setSequences] = useState<Record<string, string | null>>({}); // string 키로 변경
   const [error, setError]       = useState<string|null>(null);
 
   const [initialized, setInitialized]       = useState(false);
@@ -221,13 +266,12 @@ export default function CesiumViewer() {
 
         Object.entries(grouped).forEach(([key,grp])=>{
           const [lat,lon] = key.split(',').map(Number);
-          // build initial description for full group
           const desc = buildStrainGroupHtml(grp);
           const ent = sds.entities.add({
             id: `strain-group-${key}`,
             name: 'strain',
             position: Cartesian3.fromDegrees(lon,lat),
-            point: { pixelSize:20, color:Color.BLUE },
+            point: { pixelSize:20, color:Color.GOLDENROD},
             label:{
               text: grp.length===1?grp[0].strain_no||'-':`${grp.length} strains`,
               font: 'bold 14px sans-serif',
@@ -240,7 +284,6 @@ export default function CesiumViewer() {
             },
             description: desc,
           });
-          // stash group for filtering
           (ent as any).data = grp;
         });
 
@@ -258,82 +301,108 @@ export default function CesiumViewer() {
     };
   }, []);
 
-  // render microbes
-  useLayoutEffect(() => {
-    if (!initialized) return;
-    const mds = microbeDS.current!;
-    mds.entities.removeAll();
+// Initial marker rendering
+useLayoutEffect(() => {
+  if (!initialized || !microbeDS.current) return;
+  const mds = microbeDS.current!;
+  mds.entities.removeAll();
 
-    const grouped: Record<string, Microbe[]> = {};
-    microbes.forEach((m) => {
-      const okY = selectedYears.includes(m.year!);
-      const okO = !organismFilter || m.organism.toLowerCase().includes(organismFilter.toLowerCase());
-      const okS = !sequenceFilter || (m.sequence && m.sequence.toLowerCase().includes(sequenceFilter.toLowerCase()));
-      if (okY && okO && okS && m.latitude != null && m.longitude != null) {
-        const key = `${m.latitude.toFixed(5)},${m.longitude.toFixed(5)}`;
-        (grouped[key] ||= []).push(m);
-      }
+  // 클러스터링 비활성화
+  mds.clustering.enabled = false;
+
+  // 좌표별 그룹화
+  const grouped: Record<string, Microbe[]> = {};
+  microbes.forEach((m: Microbe) => {
+    const okY = selectedYears.includes(m.year!);
+    const okO = !organismFilter || (m.organism && m.organism.toLowerCase().includes(organismFilter.toLowerCase()));
+    if (okY && okO && m.latitude != null && m.longitude != null) {
+      const key = `${m.latitude.toFixed(5)},${m.longitude.toFixed(5)}`;
+      (grouped[key] ||= []).push(m);
+    }
+  });
+
+  Object.entries(grouped).forEach(([key, grp]) => {
+    const [lat, lon] = key.split(',').map(Number);
+    const col = yearColor[grp[0].year!] || Color.GRAY;
+    const html = buildMicrobeGroupHtml(grp, sequences);
+
+    const entity = mds.entities.add({
+      position: Cartesian3.fromDegrees(lon, lat),
+      point: { pixelSize: 10, color: col },
+      label: {
+        text: grp.length === 1 ? (grp[0].organism || 'Unknown') : `${grp.length} microbes`,
+        font: 'bold 14px sans-serif',
+        fillColor: Color.WHITESMOKE,
+        outlineColor: Color.BLACK,
+        outlineWidth: 2,
+        style: LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: VerticalOrigin.TOP,
+        pixelOffset: new Cartesian3(0, -15),
+      },
+      name: 'microbes',
+      properties: { group: new ConstantProperty(grp) },
+      description: new ConstantProperty(html),
+      show: true,
     });
+    (entity as any).groupKey = key;
+  });
+}, [initialized, microbes, selectedYears, organismFilter, yearColor]);
 
-    Object.entries(grouped).forEach(([k, grp]) => {
-      const [lat, lon] = k.split(',').map(Number);
-      const col = yearColor[grp[0].year!] || Color.GRAY;
-      let html = '<div style="background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); color: #000; font-family: Arial, sans-serif; max-height: 300px; overflow-y: auto;">';
-      html += '<h2 style="margin: 0 0 12px; font-size: 1.2rem; border-bottom: 2px solid #0000FF; padding-bottom: 4px; color: #000;">Microbe Group (Total: ' + grp.length + ')</h2>';
+// Dynamic filtering based on sequenceFilter and sequences
+useEffect(() => {
+  if (!initialized || !microbeDS.current) return;
+  const mds = microbeDS.current!;
 
-      const categories = {
-        'General': ['organism', 'ncbi_id', 'year'],
-        'Sequence': ['sequence'],
-      };
+  // 필터링된 microbe 리스트 생성
+  const filteredMicrobes = microbes.filter((m) => {
+    const okY = selectedYears.includes(m.year!);
+    const okO = !organismFilter || (m.organism && m.organism.toLowerCase().includes(organismFilter.toLowerCase()));
+    const seqFromAPI = sequences[m.id];
+    const seqFromData = m.sequence;
+    const okS = !sequenceFilter ||
+                (seqFromAPI && seqFromAPI.toLowerCase().includes(sequenceFilter.toLowerCase())) ||
+                (seqFromData && seqFromData.toLowerCase().includes(sequenceFilter.toLowerCase()));
+    return okY && okO && okS && m.latitude != null && m.longitude != null;
+  });
 
-      grp.forEach((microbe, index) => {
-        html += '<h3 style="margin: 8px 0; font-size: 1rem; color: #000; border-bottom: 1px solid #ddd;">Microbe #' + (index + 1) + '</h3>';
-        Object.entries(categories).forEach(([category, keys]) => {
-          const categoryData = Object.fromEntries(Object.entries(microbe).filter(([k]) => keys.includes(k)));
-          if (Object.keys(categoryData).length > 0) {
-            if (category) {
-              html += '<h4 style="margin: 4px 0; font-size: 0.9rem; color: #000; border-bottom: 1px solid #0000FF;">- ' + category + '</h4>';
-            }
-            html += '<table style="width: 100%; border-collapse: collapse; background: #f9f9f9; margin-bottom: 8px;">';
-            Object.entries(categoryData).forEach(([k, v]) => {
-              html += `
-                <tr style="border-bottom: 1px solid #eee;">
-                  <th style="text-align: left; padding: 6px; background: #e0e0e0; width: 40%; font-weight: 600; color: #000;">
-                    ${k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </th>
-                  <td style="padding: 6px; color: #000;">
-                    ${v ?? '-'}
-                  </td>
-                </tr>`;
-            });
-            html += '</table>';
-          }
-        });
-        if (index < grp.length - 1) html += '<hr style="border: 0.5px solid #eee; margin: 8px 0;">';
-      });
+  // 좌표별로 필터링된 그룹 생성
+  const filteredGroups: Record<string, Microbe[]> = {};
+  filteredMicrobes.forEach((m) => {
+    const key = `${m.latitude!.toFixed(5)},${m.longitude!.toFixed(5)}`;
+    (filteredGroups[key] ||= []).push(m);
+  });
 
-      html += '</div>';
+  // 마커 가시성 및 설명 업데이트
+  mds.entities.values.forEach((entity) => {
+    if (entity.name !== 'microbes') return;
+    const key = (entity as any).groupKey;
+    const filteredGrp = filteredGroups[key] || [];
+    entity.show = filteredGrp.length > 0;
 
-      mds.entities.add({
-        position: Cartesian3.fromDegrees(lon, lat),
-        point: { pixelSize: 10, color: col },
-        label: {
-          text: grp.length === 1 ? grp[0].organism : `${grp.length} microbes`,
-          font: 'bold 14px sans-serif',
-          fillColor: Color.WHITESMOKE,
-          outlineColor: Color.BLACK,
-          outlineWidth: 2,
-          style: LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: VerticalOrigin.TOP,
-          pixelOffset: new Cartesian3(0, -15),
-        },
-        name: 'microbes',
-        properties: { group: new ConstantProperty(grp) },
-        description: html,
-      });
-    });
-  }, [initialized, microbes, selectedYears, organismFilter, sequenceFilter, yearColor]);
-  // filter & rebuild strain-groups on strainFilter or sciNameFilter change
+    // description 업데이트 시 null 체크
+    if (entity.description) {
+      entity.description = new ConstantProperty(filteredGrp.length > 0 
+        ? buildMicrobeGroupHtml(filteredGrp, sequences) 
+        : '<div>No data available</div>');
+    }
+
+    // label 업데이트 시 안전하게 처리
+    if (entity.label && filteredGrp.length > 0) {
+      entity.label.text = new ConstantProperty(
+        filteredGrp.length === 1 ? (filteredGrp[0].organism || 'Unknown') : `${filteredGrp.length} microbes`
+      );
+    }
+  });
+
+  // selectedGroup 업데이트
+  if (selectedGroup && selectedGroup.length > 0) {
+    const currentKey = `${selectedGroup[0].latitude!.toFixed(5)},${selectedGroup[0].longitude!.toFixed(5)}`;
+    const filteredSelected = filteredGroups[currentKey] || [];
+    setSelectedGroup(filteredSelected.length > 0 ? filteredSelected : null);
+  }
+}, [initialized, microbes, selectedYears, organismFilter, sequenceFilter, sequences]);
+
+  // filter & rebuild strain-groups
   useEffect(() => {
     if (!initialized || !strainDS.current) return;
     const lowerNo  = strainFilter.toLowerCase();
@@ -350,34 +419,55 @@ export default function CesiumViewer() {
             && (!lowerSci || scik.includes(lowerSci));
       });
 
-       // 1) 보이기/숨기기
-    ent.show = filtered.length > 0;
+      ent.show = filtered.length > 0;
 
-    if (filtered.length > 0) {
-      // 2) non-null assert 로 LabelGraphics 가져와서 text 를 ConstantProperty 로 설정
-      const lbl = ent.label!;  
-      lbl.text = new ConstantProperty(
-        filtered.length === 1
-          ? filtered[0].strain_no || '-'
-          : `${filtered.length} strains`
-      );
+      if (filtered.length > 0) {
+        const lbl = ent.label!;  
+        lbl.text = new ConstantProperty(
+          filtered.length === 1
+            ? filtered[0].strain_no || '-'
+            : `${filtered.length} strains`
+        );
+        ent.description = new ConstantProperty(
+          buildStrainGroupHtml(filtered)
+        );
+      }
+    });
+  }, [initialized, strainFilter, sciNameFilter]);
 
-      // 3) description 도 ConstantProperty 로 감싸기
-      ent.description = new ConstantProperty(
-        buildStrainGroupHtml(filtered)
-      );
-    }
-  });
-}, [initialized, strainFilter, sciNameFilter]);
-
-  // click-handler for InfoBox
+  // click-handler for InfoBox and sequence fetching
   useEffect(() => {
     if (!initialized || !viewerInstance.current) return;
     const vh = viewerInstance.current;
     const handler = new ScreenSpaceEventHandler(vh.scene.canvas);
-    handler.setInputAction((evt: any) => {
+    handler.setInputAction(async (evt: any) => {
       const pick = vh.scene.pick(evt.position);
-      if (pick?.id?.name === 'strain' || pick?.id?.name === 'microbes') {
+      if (pick?.id?.name === 'microbes') {
+        const grp = pick.id.properties.group.getValue() as Microbe[];
+        vh.selectedEntity = pick.id;
+        setSelectedGroup(grp); // 그룹 전체 선택
+  
+        const [lat, lon] = [grp[0].latitude!, grp[0].longitude!];
+        try {
+          const response = await fetch(`/api/microbes/sequences?latitude=${lat}&longitude=${lon}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const sequenceData = await response.json();
+          setSequences((prev) => ({
+            ...prev,
+            ...sequenceData,
+          }));
+  
+          pick.id.description = new ConstantProperty(buildMicrobeGroupHtml(grp, { ...sequences, ...sequenceData }));
+        } catch (err) {
+          console.error('Sequence fetch error:', err);
+          setError('Failed to load sequence data.');
+        }
+      } else if (pick?.id?.name === 'strain') {
         vh.selectedEntity = pick.id;
         setSelectedGroup(null);
       } else {
@@ -386,7 +476,7 @@ export default function CesiumViewer() {
       }
     }, ScreenSpaceEventType.LEFT_CLICK);
     return () => handler.destroy();
-  }, [initialized]);
+  }, [initialized, sequences]);
 
   // make InfoBox text selectable
   useEffect(() => {
@@ -408,15 +498,17 @@ export default function CesiumViewer() {
     return () => obs.disconnect();
   }, [initialized]);
 
-  // year animation controls (omitted for brevity, same as before) …
+  // year animation controls
   const toggleYear = useCallback((y:number)=>{
     if(isPlaying) setIsPlaying(false);
     setSelectedYears(s=> s.includes(y)? s.filter(x=>x!==y): [...s,y]);
   },[isPlaying]);
+
   const toggleAll = useCallback(()=>{
     if(isPlaying) setIsPlaying(false);
     setSelectedYears(s=> s.length===uniqueYears.length? []: [...uniqueYears]);
   },[isPlaying,uniqueYears]);
+  
   const playPause = useCallback(()=>{
     if(!isPlaying && uniqueYears.length){
       setCurrentYear(uniqueYears[0]);
@@ -424,6 +516,7 @@ export default function CesiumViewer() {
     }
     setIsPlaying(p=>!p);
   },[isPlaying,uniqueYears]);
+
   useEffect(()=>{
     if(!isPlaying){
       if(playInterval.current) clearInterval(playInterval.current);
