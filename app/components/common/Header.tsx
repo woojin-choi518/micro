@@ -6,11 +6,11 @@ import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
 const navItems = [
-  { label: 'Map',        href: '/map' },
-  { label: 'Similarity', href: '/similarity' },
-  { label: 'Polar',      href: '/cesium' },
-  { label: 'Trees',      href: '/tree' },
-  { label: 'Crops',      href: '/prod' },
+  // { label: 'Map',        href: '/map' },
+  // { label: 'Similarity', href: '/similarity' },
+  // { label: 'Polar',      href: '/cesium' },
+  // { label: 'Trees',      href: '/tree' },
+  // { label: 'Crops',      href: '/prod' },
   { label: 'Asan',       href: '/asan' },
 ];
 
@@ -40,7 +40,8 @@ export default function Header() {
           {/* logo */}
           <Link href="/" className="text-xl font-bold">
             <span className={scrolled ? 'text-black' : 'text-white'}>
-              Microbiome Map
+              {/* Microbiome Map */}
+              AirSense Asan
             </span>
           </Link>
 
