@@ -55,10 +55,14 @@ export default function HeroSection() {
         "
       >
         <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold drop-shadow-lg mb-4">
-          Microbiome Map Project
+          {/* Microbiome Map Project */}
+          AirSense Asan
         </h1>
-        <p className="text-base sm:text-lg md:text-2xl font-light drop-shadow mb-6">
+        {/* <p className="text-base sm:text-lg md:text-2xl font-light drop-shadow mb-6">
           Explore the World of Microorganisms
+        </p> */}
+        <p className="text-base sm:text-lg md:text-2xl font-bold drop-shadow mb-6">
+          아산시 악취 문제 해결을 위한 데이터 플랫폼
         </p>
 
         {/* 여기에 버튼 둘 다 렌더 */}
@@ -77,7 +81,7 @@ export default function HeroSection() {
 
           {/* Explore 버튼 */}
           <Link
-            href="/map"
+            href="/asan"
             className="
               bg-emerald-500 hover:bg-emerald-600
               text-white font-semibold
@@ -88,7 +92,7 @@ export default function HeroSection() {
               transition
             "
           >
-            <span>🌍</span> Explore the Map
+            <span>🌍</span> 아산시 지도 바로가기
           </Link>
         </div>
 
